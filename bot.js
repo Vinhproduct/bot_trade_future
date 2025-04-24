@@ -14,6 +14,7 @@ const exchange = new ccxt.binance({
   secret: process.env.API_SECRET,
   enableRateLimit: true,
   adjustForTimeDifference: true,
+  enableFutures: true,
   options: {
     defaultType: 'future',
   },
@@ -65,10 +66,13 @@ async function getAllTradingPairs() {
           market &&
           market.active &&
           market.type === 'future' &&
-          symbol.includes('USDT') &&
-          market.contractType === 'PERPETUAL';
+          (symbol.includes('USDT') || symbol.includes('USD')); // Chấp nhận cả USDT và USD
         if (!isValid) {
-          logToFile(`Skipping ${symbol}: Not a valid USDT perpetual future`);
+          logToFile(
+            `Skipping ${symbol}: Not a valid future (active=${market?.active}, type=${market?.type}, includesUSDTorUSD=${symbol.includes('USDT') || symbol.includes('USD')}, contractType=${market?.contractType})`
+          );
+        } else {
+          logToFile(`Valid pair: ${symbol} (contractType=${market.contractType})`);
         }
         return isValid;
       });
@@ -79,12 +83,14 @@ async function getAllTradingPairs() {
     throw e;
   }
 }
-
 async function fetchDataWithRetry(symbol, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
-      const ohlcv = await exchange.fetchOHLCV(symbol, timeframe, undefined, 100);
-      if (!ohlcv || ohlcv.length < 100) throw new Error('Incomplete OHLCV data');
+      const ohlcv = await exchange.fetchOHLCV(symbol, timeframe, undefined, 50); // Giảm xuống 50
+      if (!ohlcv || ohlcv.length < 50) {
+        logToFile(`Skipping ${symbol}: Insufficient OHLCV data (${ohlcv?.length || 0} candles)`);
+        return null;
+      }
       const closes = ohlcv.map(c => c[4]);
       return {
         closes,
@@ -95,7 +101,10 @@ async function fetchDataWithRetry(symbol, retries = 3) {
       };
     } catch (e) {
       logToFile(`Retry ${i + 1}/${retries} for ${symbol}: ${e.message}`);
-      if (i === retries - 1) throw new Error(`Failed to fetch data for ${symbol}`);
+      if (i === retries - 1) {
+        logToFile(`Failed to fetch data for ${symbol}`);
+        return null;
+      }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
@@ -126,15 +135,29 @@ async function openPosition(symbol, side, amount) {
   try {
     const ticker = await exchange.fetchTicker(symbol);
     const volumeUSD = ticker.quoteVolume || 0;
+
+    // Tính toán leverage động dựa trên volume thị trường
     let dynamicLeverage = volumeThresholds.find(t => volumeUSD >= t.volume)?.leverage || leverage;
     await exchange.setLeverage(dynamicLeverage, symbol);
 
     const price = ticker.last;
-    const tp = side === 'buy' ? price + profitTarget / (dynamicLeverage * amount) : price - profitTarget / (dynamicLeverage * amount);
-    const sl = side === 'buy' ? price - lossLimit / (dynamicLeverage * amount) : price + lossLimit / (dynamicLeverage * amount);
+    
+    // Tính toán TP và SL
+    const tp = side === 'buy' 
+      ? price + (profitTarget / dynamicLeverage) 
+      : price - (profitTarget / dynamicLeverage);
+    const sl = side === 'buy' 
+      ? price - (lossLimit / dynamicLeverage) 
+      : price + (lossLimit / dynamicLeverage);
+
+    // Kiểm tra nếu có đủ số dư và mở lệnh
+    if (balance < 10) {
+      logToFile(`❌ Not enough balance to open position for ${symbol}`);
+      return false;
+    }
 
     await exchange.createMarketOrder(symbol, side, amount);
-
+    
     const opposite = side === 'buy' ? 'sell' : 'buy';
     await exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', opposite, amount, undefined, {
       stopPrice: tp,
@@ -147,8 +170,11 @@ async function openPosition(symbol, side, amount) {
       reduceOnly: true,
     });
 
+    // Lưu trạng thái của lệnh
     activePositions.set(symbol, { side, amount, entry: price, tp, sl });
     logToFile(`🟢 ${symbol} ${side.toUpperCase()} opened at ${price} (TP: ${tp}, SL: ${sl})`);
+    
+    // Cập nhật thông tin các lệnh đang mở
     broadcast({
       type: 'positions',
       positions: Array.from(activePositions.entries()).map(([sym, pos]) => ({
@@ -167,6 +193,7 @@ async function openPosition(symbol, side, amount) {
     return false;
   }
 }
+
 
 async function checkPositions() {
   try {
@@ -245,6 +272,10 @@ async function main() {
 
       try {
         const data = await fetchDataWithRetry(symbol);
+        if (!data) {
+          logToFile(`Skipping ${symbol}: No data available`);
+          continue;
+        }
         logToFile(`📈 Data for ${symbol}: RSI=${data.rsi[data.rsi.length - 1]?.toFixed(2) || '-'}`);
 
         const signals = analyze(data);
