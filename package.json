@@ -6,6 +6,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "ccxt": "^4.4.77",
     "chart.js": "^4.4.0",
