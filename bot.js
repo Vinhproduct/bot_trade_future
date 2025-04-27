@@ -1,7 +1,7 @@
 const fs = require('fs');
 require('dotenv').config();
 const ccxt = require('ccxt');
-const { RSI, MACD } = require('technicalindicators');
+const { RSI, MACD, SMA, EMA } = require('technicalindicators');
 
 // Khởi tạo exchange
 const exchange = new ccxt.binance({
@@ -9,19 +9,18 @@ const exchange = new ccxt.binance({
   secret: process.env.API_SECRET,
   enableRateLimit: true,
   adjustForTimeDifference: true,
-  options: {
-    defaultType: 'future',
-  },
+  options: { defaultType: 'future' },
 });
 
 // Cấu hình bot
-let balance = 40;
 const maxPositions = 5; // Tối đa 5 lệnh
 const tradeAmount = 10; // Mỗi lệnh 10 USDT
 const leverage = 7; // Đòn bẩy 7x
-const profitTarget = 2.25; // Lợi nhuận mục tiêu 2.25 USDT
+const profitTarget = 2; // Lợi nhuận mục tiêu 2 USDT
 const lossLimit = 3; // Cắt lỗ 3 USDT
 const rsiPeriod = 14; // Chu kỳ RSI
+const smaPeriod = 50;
+const emaPeriod = 20;
 const timeframe = '1h'; // Khung thời gian 1 giờ
 const activePositions = new Map();
 
@@ -52,7 +51,7 @@ async function getTradingPairs() {
         }
         return isValid;
       })
-      .map(symbol => symbol.replace(':USDT', '')); // Loại bỏ :USDT
+      .map(symbol => symbol.replace(':USDT', ''));
     logToFile(`Loaded ${tradingPairs.length} trading pairs`);
     return tradingPairs;
   } catch (e) {
@@ -72,13 +71,18 @@ async function fetchIndicators(symbol) {
     const closes = ohlcv.map(c => c[4]);
     const volumes = ohlcv.map(c => c[5]);
     const macdResult = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
+    const rsiResult = RSI.calculate({ values: closes, period: rsiPeriod });
+    const smaResult = SMA.calculate({ values: closes, period: smaPeriod });
+    const emaResult = EMA.calculate({ values: closes, period: emaPeriod });
 
     return {
       closes,
       volumes,
-      rsi: RSI.calculate({ values: closes, period: rsiPeriod }),
+      rsi: rsiResult,
       macd: macdResult,
-      volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20, // Trung bình volume 20 cây
+      sma: smaResult,
+      ema: emaResult,
+      volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20,
     };
   } catch (e) {
     logToFile(`Error fetching data for ${symbol}: ${e.message}`);
@@ -87,37 +91,45 @@ async function fetchIndicators(symbol) {
 }
 
 // Phân tích tín hiệu
-function analyze({ rsi, macd, volumes, volumeAvg }) {
+function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   let signals = [];
 
+  const latestClose = closes[closes.length - 1];
+  const latestRSI = rsi[rsi.length - 1];
+  const previousRSI = rsi[rsi.length - 2];
+  const latestMACDHist = macd[macd.length - 1]?.histogram;
+  const previousMACDHist = macd[macd.length - 2]?.histogram;
+  const latestSMA = sma[sma.length - 1];
+  const latestEMA = ema[ema.length - 1];
+  const currentVolume = volumes[volumes.length - 1];
+
   // RSI Signal
-  if (rsi[rsi.length - 1] < 30 && rsi[rsi.length - 2] < 30) {
-    signals.push('LONG');
-  } else if (rsi[rsi.length - 1] > 70 && rsi[rsi.length - 2] > 70) {
-    signals.push('SHORT');
-  }
+  if (latestRSI < 30 && previousRSI < 30) signals.push('LONG');
+  else if (latestRSI > 70 && previousRSI > 70) signals.push('SHORT');
 
   // MACD Signal
-  const macdHist = macd[macd.length - 1]?.histogram;
-  if (macdHist > 0 && macd[macd.length - 2]?.histogram <= 0) {
-    signals.push('LONG');
-  } else if (macdHist < 0 && macd[macd.length - 2]?.histogram >= 0) {
-    signals.push('SHORT');
-  }
+  if (latestMACDHist > 0 && previousMACDHist <= 0) signals.push('LONG');
+  else if (latestMACDHist < 0 && previousMACDHist >= 0) signals.push('SHORT');
 
   // Volume Signal
-  const currentVolume = volumes[volumes.length - 1];
   if (currentVolume > volumeAvg * 1.5) {
-    // Volume tăng đột biến
-    if (rsi[rsi.length - 1] < 50) signals.push('LONG');
-    else if (rsi[rsi.length - 1] > 50) signals.push('SHORT');
+    if (latestRSI < 50) signals.push('LONG');
+    else if (latestRSI > 50) signals.push('SHORT');
   }
+
+  // SMA Signal
+  if (latestClose > latestSMA) signals.push('LONG');
+  else if (latestClose < latestSMA) signals.push('SHORT');
+
+  // EMA Signal
+  if (latestClose > latestEMA) signals.push('LONG');
+  else if (latestClose < latestEMA) signals.push('SHORT');
 
   const longCount = signals.filter(s => s === 'LONG').length;
   const shortCount = signals.filter(s => s === 'SHORT').length;
 
-  if (longCount >= 2) return 'LONG';
-  if (shortCount >= 2) return 'SHORT';
+  if (longCount >= 4) return 'LONG';
+  if (shortCount >= 4) return 'SHORT';
   return null;
 }
 
@@ -130,7 +142,7 @@ async function openPosition(symbol, side, amount) {
     const ticker = await exchange.fetchTicker(symbol);
     const price = ticker.last;
 
-    // Tính TP/SL dựa trên giá
+    // Tính TP/SL
     const tp = side === 'buy'
       ? price * (1 + profitTarget / (tradeAmount * leverage))
       : price * (1 - profitTarget / (tradeAmount * leverage));
@@ -138,11 +150,10 @@ async function openPosition(symbol, side, amount) {
       ? price * (1 - lossLimit / (tradeAmount * leverage))
       : price * (1 + lossLimit / (tradeAmount * leverage));
 
-    // Mở lệnh thị trường
     await exchange.createMarketOrder(symbol, side, amount);
 
-    // Đặt TP/SL
     const opposite = side === 'buy' ? 'sell' : 'buy';
+
     await exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', opposite, amount, undefined, {
       stopPrice: tp,
       closePosition: true,
@@ -156,8 +167,6 @@ async function openPosition(symbol, side, amount) {
 
     activePositions.set(symbol, { side, amount, entry: price, tp, sl });
     logToFile(`🟢 Opened ${side.toUpperCase()} on ${symbol} at ${price} (TP: ${tp}, SL: ${sl})`);
-    balance -= tradeAmount;
-    logToFile(`💰 Updated balance: ${balance} USDT`);
     return true;
   } catch (e) {
     logToFile(`Error opening position on ${symbol}: ${e.message}`);
@@ -189,7 +198,6 @@ async function checkPositions() {
       if (!openSymbols.has(symbol)) {
         logToFile(`🟥 Position on ${symbol} closed`);
         activePositions.delete(symbol);
-        balance += tradeAmount; // Cập nhật lại balance khi đóng lệnh
       }
     }
   } catch (e) {
@@ -201,28 +209,24 @@ async function checkPositions() {
 async function runBot() {
   while (true) {
     try {
-      // Cập nhật số dư
       const balanceInfo = await exchange.fetchBalance();
-      const usdtBalance = balanceInfo.total.USDT || 0;
-      logToFile(`💰 Current balance: ${usdtBalance} USDT`);
-      balance = usdtBalance;
+      const balance = balanceInfo.total.USDT || 0;
+      logToFile(`💰 Current balance: ${balance} USDT`);
 
-      // Kiểm tra điều kiện vốn
-      if (balance < tradeAmount && activePositions.size < maxPositions) {
-        logToFile(`❌ Insufficient balance: ${balance} USDT, need at least ${tradeAmount} USDT`);
-        await new Promise(resolve => setTimeout(resolve, 60000));
-        continue;
-      }
-
-      // Kiểm tra vị thế hiện tại
       await checkPositions();
+
       if (activePositions.size >= maxPositions) {
-        logToFile(`⚠️ Max positions reached (${maxPositions}), waiting for positions to close`);
+        logToFile(`⚠️ Max positions reached (${maxPositions}), waiting...`);
         await new Promise(resolve => setTimeout(resolve, 60000));
         continue;
       }
 
-      // Lấy danh sách cặp giao dịch
+      if (balance < tradeAmount) {
+        logToFile(`❌ Not enough balance to open new trades.`);
+        await new Promise(resolve => setTimeout(resolve, 60000));
+        continue;
+      }
+
       const tradingPairs = await getTradingPairs();
       if (tradingPairs.length === 0) {
         logToFile('❌ No trading pairs available');
@@ -230,49 +234,36 @@ async function runBot() {
         continue;
       }
 
-      // Duyệt qua các cặp giao dịch
       for (const symbol of tradingPairs) {
-        if (activePositions.size >= maxPositions) {
-          logToFile(`⚠️ Max positions reached (${maxPositions})`);
-          break;
-        }
-        if (balance < tradeAmount) {
-          logToFile(`⚠️ Insufficient balance: ${balance} USDT`);
-          break;
-        }
-        if (activePositions.has(symbol)) {
-          logToFile(`⚠️ Already trading on ${symbol}`);
-          continue;
-        }
+        if (activePositions.size >= maxPositions) break;
+        if (activePositions.has(symbol)) continue;
 
-        // Lấy và phân tích chỉ báo
         const indicators = await fetchIndicators(symbol);
         if (!indicators) continue;
 
         const signal = analyze(indicators);
-        if (!signal) {
-          logToFile(`📊 No clear signal for ${symbol}`);
-          continue;
-        }
+        if (!signal) continue;
 
-        // Tính số lượng dựa trên tradeAmount
         const price = indicators.closes[indicators.closes.length - 1];
         const amount = tradeAmount / price;
 
-        // Mở vị thế
-        const side = signal === 'LONG' ? 'buy' : 'sell';
-        const success = await openPosition(symbol, side, amount);
-        if (!success) {
-          logToFile(`❌ Failed to open position on ${symbol}`);
+        const estimatedCost = amount * price;
+        if (estimatedCost < 9.5 || estimatedCost > 10.5) {
+          logToFile(`❌ Estimated cost ${estimatedCost.toFixed(2)} USDT not acceptable for ${symbol}`);
+          continue;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Tránh bị giới hạn API
+        const side = signal === 'LONG' ? 'buy' : 'sell';
+        const success = await openPosition(symbol, side, amount);
+        if (!success) logToFile(`❌ Failed to open position on ${symbol}`);
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (e) {
       logToFile(`Error in bot loop: ${e.message}`);
     }
-    logToFile('Finished one loop cycle');
-    await new Promise(resolve => setTimeout(resolve, 60000)); // Nghỉ 1 phút mỗi chu kỳ
+    logToFile('Finished one loop cycle.');
+    await new Promise(resolve => setTimeout(resolve, 60000));
   }
 }
 
