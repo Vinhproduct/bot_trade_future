@@ -31,10 +31,11 @@ function logToFile(message) {
   fs.appendFileSync('bot.log', logMessage + '\n');
 }
 
-// Lấy danh sách cặp giao dịch hợp lệ
+// Lấy danh sách cặp giao dịch hợp lệ (chỉ perpetual futures với USDT)
 async function getTradingPairs() {
   try {
     const markets = await exchange.loadMarkets();
+    let skippedCount = 0;
     const tradingPairs = Object.keys(markets)
       .filter(symbol => {
         const market = markets[symbol];
@@ -47,12 +48,13 @@ async function getTradingPairs() {
           symbol.includes('USDT') &&
           symbol.endsWith(':USDT');
         if (!isValid) {
-          logToFile(`Skipping ${symbol}: Not a valid perpetual future`);
+          skippedCount++;
         }
         return isValid;
       })
       .map(symbol => symbol.replace(':USDT', ''));
-    logToFile(`Loaded ${tradingPairs.length} trading pairs`);
+    logToFile(`Loaded ${tradingPairs.length} USDT perpetual futures pairs: ${tradingPairs.join(', ')}`);
+    logToFile(`Skipped ${skippedCount} non-USDT or non-perpetual pairs`);
     return tradingPairs;
   } catch (e) {
     logToFile(`Error fetching markets: ${e.message}`);
