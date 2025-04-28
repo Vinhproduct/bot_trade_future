@@ -113,8 +113,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const longCount = signals.filter(s => s === 'LONG').length;
   const shortCount = signals.filter(s => s === 'SHORT').length;
 
-  if (longCount >= 4) return 'LONG';
-  if (shortCount >= 4) return 'SHORT';
+  if (longCount >= 3) return 'LONG';
+  if (shortCount >= 3) return 'SHORT';
   return null;
 }
 
