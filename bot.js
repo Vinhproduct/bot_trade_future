@@ -130,8 +130,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const longCount = signals.filter(s => s === 'LONG').length;
   const shortCount = signals.filter(s => s === 'SHORT').length;
 
-  if (longCount >= 3) return 'LONG';
-  if (shortCount >= 3) return 'SHORT';
+  if (longCount >= 4) return 'LONG';
+  if (shortCount >= 4) return 'SHORT';
   return null;
 }
 
@@ -230,11 +230,12 @@ async function runBot() {
         continue;
       }
 
-      if (balance < tradeAmount) {
-        logToFile(`❌ Not enough balance to trade.`);
+      if (balance < (activePositions.size + 1) * tradeAmount) {
+        logToFile(`❌ Not enough balance to open more positions.`);
         await sleep(60000);
         continue;
       }
+      
 
       const tradingPairs = await getTradingPairs();
       if (tradingPairs.length === 0) {
