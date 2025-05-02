@@ -130,8 +130,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const longCount = signals.filter(s => s === 'LONG').length;
   const shortCount = signals.filter(s => s === 'SHORT').length;
 
-  if (longCount >= 3) return 'LONG';
-  if (shortCount >= 3) return 'SHORT';
+  if (longCount >= 4) return 'LONG';
+  if (shortCount >= 4) return 'SHORT';
   return null;
 }
 
@@ -144,27 +144,46 @@ async function openPosition(symbol, side, amount) {
     await exchange.setMarginMode('isolated', symbol);
     await sleep(300);
 
+    const market = exchange.market(symbol);
     const ticker = await exchange.fetchTicker(symbol);
     const price = ticker.last;
 
-    const tpPrice = side === 'buy'
-      ? price * (1 + profitTarget / (tradeAmount * leverage))
-      : price * (1 - profitTarget / (tradeAmount * leverage));
-    const slPrice = side === 'buy'
-      ? price * (1 - lossLimit / (tradeAmount * leverage))
-      : price * (1 + lossLimit / (tradeAmount * leverage));
+    const pricePrecision = market.precision?.price || 4;
+    const tickSize = market.info?.priceIncrement ? parseFloat(market.info.priceIncrement) : 0.01;
 
+    // Tính giá TP và SL theo tỷ lệ phần trăm
+    let tpPrice, slPrice;
+
+    const tpPercent = profitTarget / (tradeAmount * leverage);
+    const slPercent = lossLimit / (tradeAmount * leverage);
+
+    if (side === 'buy') {
+      tpPrice = price * (1 + tpPercent);
+      slPrice = price * (1 - slPercent);
+    } else {
+      tpPrice = price * (1 - tpPercent);
+      slPrice = price * (1 + slPercent);
+    }
+
+    // Làm tròn giá TP/SL theo tickSize
+    tpPrice = parseFloat((Math.round(tpPrice / tickSize) * tickSize).toFixed(pricePrecision));
+    slPrice = parseFloat((Math.round(slPrice / tickSize) * tickSize).toFixed(pricePrecision));
+
+    // Đặt lệnh market vào lệnh
     await exchange.createMarketOrder(symbol, side, amount);
     await sleep(300);
 
     const opposite = side === 'buy' ? 'sell' : 'buy';
 
+    // TP
     await exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', opposite, amount, undefined, {
       stopPrice: tpPrice,
       closePosition: true,
       reduceOnly: true,
     });
     await sleep(300);
+
+    // SL
     await exchange.createOrder(symbol, 'STOP_MARKET', opposite, amount, undefined, {
       stopPrice: slPrice,
       closePosition: true,
@@ -172,13 +191,14 @@ async function openPosition(symbol, side, amount) {
     });
 
     activePositions.set(symbol, { side, amount, entry: price, tp: tpPrice, sl: slPrice });
-    logToFile(`🟢 Opened ${side.toUpperCase()} on ${symbol} at ${price} (TP: ${tpPrice}, SL: ${slPrice})`);
+    logToFile(`🟢 Opened ${side.toUpperCase()} on ${symbol} at ${price.toFixed(pricePrecision)} (TP: ${tpPrice}, SL: ${slPrice})`);
     return true;
   } catch (e) {
     logToFile(`❌ Error opening position on ${symbol}: ${e.message}`);
     return false;
   }
 }
+
 
 // Kiểm tra vị thế
 async function checkPositions() {
@@ -230,12 +250,17 @@ async function runBot() {
         continue;
       }
 
-      if (balance < (activePositions.size + 1) * tradeAmount) {
-        logToFile(`❌ Not enough balance to open more positions.`);
+      // if (balance < (activePositions.size + 1) * tradeAmount) {
+      //   logToFile(`❌ Not enough balance to open more positions.`);
+      //   await sleep(60000);
+      //   continue;
+      // }
+      if (balance < tradeAmount) {
+        logToFile(`❌ Not enough balance to trade.`);
         await sleep(60000);
         continue;
       }
-      
+
 
       const tradingPairs = await getTradingPairs();
       if (tradingPairs.length === 0) {
@@ -243,21 +268,30 @@ async function runBot() {
         continue;
       }
 
+      const candidates = [];
+
       for (const symbol of tradingPairs) {
         if (activePositions.size >= maxPositions) break;
         if (activePositions.has(symbol)) continue;
-
+      
         const indicators = await fetchIndicators(symbol);
         if (!indicators) continue;
-
+      
         const signal = analyze(indicators);
         if (signal) {
-          const side = signal === 'LONG' ? 'buy' : 'sell';
-          await openPosition(symbol, side, tradeAmount);
+          candidates.push({ symbol, signal, volume: indicators.volumes.at(-1) });
         }
-        await sleep(3000);
+      
+        await sleep(1000); // giảm nhẹ thời gian sleep để xử lý nhanh hơn
       }
-    } catch (e) {
+      
+      if (candidates.length > 0) {
+        const highestVolumeCoin = candidates.reduce((max, c) => (c.volume > max.volume ? c : max), candidates[0]);
+        const side = highestVolumeCoin.signal === 'LONG' ? 'buy' : 'sell';
+        await openPosition(highestVolumeCoin.symbol, side, tradeAmount);
+      }      
+    }
+    catch (e) {
       logToFile(`❌ Error in bot: ${e.message}`);
     }
 
