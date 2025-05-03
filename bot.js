@@ -88,7 +88,6 @@ async function fetchIndicators(symbol) {
 // Phân tích tín hiệu
 // Phân tích tín hiệu
 function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
-  const signals = [];
   const latestClose = closes.at(-1);
   const latestRSI = rsi.at(-1);
   const previousRSI = rsi.at(-2);
@@ -98,42 +97,35 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const latestEMA = ema.at(-1);
   const currentVolume = volumes.at(-1);
 
-  // Điều kiện vào LONG hoặc SHORT cơ bản
-  if (latestRSI < 30 && previousRSI < 30) signals.push('LONG');
-  if (latestRSI > 70 && previousRSI > 70) signals.push('SHORT');
-  if (latestMACDHist > 0 && previousMACDHist <= 0) signals.push('LONG');
-  if (latestMACDHist < 0 && previousMACDHist >= 0) signals.push('SHORT');
+  const longSignals = [];
+  const shortSignals = [];
 
-  // Lọc khối lượng: chỉ vào lệnh nếu volume > 2x hoặc 3x volume trung bình
+  // RSI
+  if (latestRSI < 30 && previousRSI < 30) longSignals.push('RSI');
+  if (latestRSI > 70 && previousRSI > 70) shortSignals.push('RSI');
+
+  // MACD histogram
+  if (latestMACDHist > 0 && previousMACDHist <= 0) longSignals.push('MACD');
+  if (latestMACDHist < 0 && previousMACDHist >= 0) shortSignals.push('MACD');
+
+  // Volume breakout
   if (currentVolume > volumeAvg * 2) {
-    if (latestRSI < 50) signals.push('LONG');
-    else signals.push('SHORT');
+    if (latestRSI < 50) longSignals.push('Volume');
+    else shortSignals.push('Volume');
   }
 
-  // Lọc tín hiệu mạnh từ RSI và MACD (sửa đổi để tránh thêm tín hiệu trùng lặp)
-  if (signals.filter(s => s === 'LONG').length >= 3) {
-    if (latestRSI < 20) signals.push('LONG');
-    if (latestMACDHist > 2) signals.push('LONG');
-  }
-  if (signals.filter(s => s === 'SHORT').length >= 3) {
-    if (latestRSI > 80) signals.push('SHORT');
-    if (latestMACDHist < -2) signals.push('SHORT');
-  }
+  // SMA/EMA crossover
+  if (latestClose > latestSMA) longSignals.push('SMA');
+  else shortSignals.push('SMA');
+  if (latestClose > latestEMA) longSignals.push('EMA');
+  else shortSignals.push('EMA');
 
-  // Lọc theo SMA và EMA
-  if (latestClose > latestSMA) signals.push('LONG');
-  else signals.push('SHORT');
-  if (latestClose > latestEMA) signals.push('LONG');
-  else signals.push('SHORT');
-
-  // Tính toán số lượng tín hiệu LONG và SHORT
-  const longCount = signals.filter(s => s === 'LONG').length;
-  const shortCount = signals.filter(s => s === 'SHORT').length;
-
-  if (longCount >= 3) return 'LONG';
-  if (shortCount >= 3) return 'SHORT';
+  // Đếm và quyết định
+  if (longSignals.length >= 3) return 'LONG';
+  if (shortSignals.length >= 3) return 'SHORT';
   return null;
 }
+
 
 
 // Mở vị thế
@@ -250,11 +242,6 @@ async function runBot() {
         continue;
       }
 
-      // if (balance < (activePositions.size + 1) * tradeAmount) {
-      //   logToFile(`❌ Not enough balance to open more positions.`);
-      //   await sleep(60000);
-      //   continue;
-      // }
       if (balance < tradeAmount) {
         logToFile(`❌ Not enough balance to trade.`);
         await sleep(60000);
