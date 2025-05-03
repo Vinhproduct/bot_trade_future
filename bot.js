@@ -14,7 +14,7 @@ const exchange = new ccxt.binance({
 
 // Cấu hình bot
 const maxPositions = 5;
-const tradeAmount = 10;
+const tradeAmount = 10; // Each trade is exactly $10
 const leverage = 7;
 const profitTarget = 2;
 const lossLimit = 3;
@@ -73,13 +73,13 @@ async function fetchIndicators(symbol) {
 
     return {
       closes,
-      volumes, // ✅ Thêm dòng này để đưa volumes vào output
+      volumes,
       rsi: RSI.calculate({ values: closes, period: rsiPeriod }),
       macd: MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }),
       sma: SMA.calculate({ values: closes, period: smaPeriod }),
       ema: EMA.calculate({ values: closes, period: emaPeriod }),
       volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20,
-    };    
+    };
   } catch (e) {
     logToFile(`❌ Error fetching indicators for ${symbol}: ${e.message}`);
     return null;
@@ -159,8 +159,8 @@ async function openPosition(symbol, side, amount) {
     tpPrice = parseFloat((Math.round(tpPrice / tickSize) * tickSize).toFixed(pricePrecision));
     slPrice = parseFloat((Math.round(slPrice / tickSize) * tickSize).toFixed(pricePrecision));
 
-    // Đặt lệnh market vào lệnh
-    await exchange.createMarketOrder(symbol, side, amount);
+    // Đặt lệnh market vào lệnh với kích thước $10
+    await exchange.createMarketOrder(symbol, side, amount); // amount = tradeAmount = 10
     await sleep(300);
 
     const opposite = side === 'buy' ? 'sell' : 'buy';
