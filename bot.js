@@ -41,26 +41,43 @@ function sleep(ms) {
 async function getTradingPairs() {
   try {
     const markets = await exchange.loadMarkets();
-    const tradingPairs = Object.keys(markets)
-      .filter(symbol => {
-        const market = markets[symbol];
-        return (
-          market &&
-          market.active &&
-          market.type === 'swap' &&
-          market.info.contractType === 'PERPETUAL' &&
-          symbol.includes('USDT') &&
-          symbol.endsWith(':USDT')
-        );
-      })
-      .map(symbol => symbol);
-    logToFile(`✅ Loaded ${tradingPairs.length} USDT perpetual futures pairs.`);
+    const symbols = Object.keys(markets).filter(symbol => {
+      const market = markets[symbol];
+      return (
+        market &&
+        market.active &&
+        market.type === 'swap' &&
+        market.info.contractType === 'PERPETUAL' &&
+        symbol.includes('USDT') &&
+        symbol.endsWith(':USDT')
+      );
+    });
+
+    // Lấy volume 24h cho từng cặp
+    const volumes = [];
+    for (const symbol of symbols) {
+      try {
+        const ticker = await exchange.fetchTicker(symbol);
+        volumes.push({ symbol, volume: ticker.quoteVolume || 0 });
+        await sleep(100); // tránh rate limit
+      } catch {
+        continue;
+      }
+    }
+
+    // Sắp xếp theo volume giảm dần
+    const sorted = volumes.sort((a, b) => b.volume - a.volume);
+    const tradingPairs = sorted.slice(0, 20).map(v => v.symbol);
+
+
+    logToFile(`✅ Loaded ${tradingPairs.length} USDT pairs, sorted by volume.`);
     return tradingPairs;
   } catch (e) {
     logToFile(`❌ Error loading trading pairs: ${e.message}`);
     return [];
   }
 }
+
 
 // Lấy dữ liệu và tính chỉ báo
 async function fetchIndicators(symbol) {
@@ -168,17 +185,23 @@ async function openPosition(symbol, side, amount) {
     // TP
     await exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', opposite, amount, undefined, {
       stopPrice: tpPrice,
+      triggerPrice: tpPrice,
+      workingType: 'CONTRACT_PRICE',
       closePosition: true,
       reduceOnly: true,
     });
+    
     await sleep(300);
 
     // SL
     await exchange.createOrder(symbol, 'STOP_MARKET', opposite, amount, undefined, {
       stopPrice: slPrice,
+      triggerPrice: slPrice,
+      workingType: 'CONTRACT_PRICE',
       closePosition: true,
       reduceOnly: true,
     });
+    
 
     activePositions.set(symbol, { side, amount, entry: price, tp: tpPrice, sl: slPrice });
     logToFile(`🟢 Opened ${side.toUpperCase()} on ${symbol} at ${price.toFixed(pricePrecision)} (TP: ${tpPrice}, SL: ${slPrice})`);
