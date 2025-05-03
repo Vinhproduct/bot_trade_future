@@ -86,7 +86,6 @@ async function fetchIndicators(symbol) {
 }
 
 // Phân tích tín hiệu
-// Phân tích tín hiệu
 function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const latestClose = closes.at(-1);
   const latestRSI = rsi.at(-1);
@@ -271,12 +270,14 @@ async function runBot() {
       
         await sleep(1000); // giảm nhẹ thời gian sleep để xử lý nhanh hơn
       }
+      candidates.sort((a, b) => b.volume - a.volume);
+      for (const candidate of candidates) {
+        if (activePositions.size >= maxPositions) break;
       
-      if (candidates.length > 0) {
-        const highestVolumeCoin = candidates.reduce((max, c) => (c.volume > max.volume ? c : max), candidates[0]);
-        const side = highestVolumeCoin.signal === 'LONG' ? 'buy' : 'sell';
-        await openPosition(highestVolumeCoin.symbol, side, tradeAmount);
-      }      
+        const side = candidate.signal === 'LONG' ? 'buy' : 'sell';
+        await openPosition(candidate.symbol, side, tradeAmount);
+        await sleep(500); // ngủ nhẹ để tránh rate limit
+      }     
     }
     catch (e) {
       logToFile(`❌ Error in bot: ${e.message}`);
