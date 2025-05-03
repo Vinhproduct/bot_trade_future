@@ -21,8 +21,9 @@ const lossLimit = 3;
 const rsiPeriod = 14;
 const smaPeriod = 50;
 const emaPeriod = 20;
-const timeframe = '15m'; // Đã chuyển sang khung M15
+const timeframe = '15m';
 const activePositions = new Map();
+const targetBalance = 1000; // Mục tiêu vốn $1000
 
 // Ghi log
 function logToFile(message) {
@@ -72,13 +73,13 @@ async function fetchIndicators(symbol) {
 
     return {
       closes,
-      volumes,
+      volumes, // ✅ Thêm dòng này để đưa volumes vào output
       rsi: RSI.calculate({ values: closes, period: rsiPeriod }),
       macd: MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }),
       sma: SMA.calculate({ values: closes, period: smaPeriod }),
       ema: EMA.calculate({ values: closes, period: emaPeriod }),
       volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20,
-    };
+    };    
   } catch (e) {
     logToFile(`❌ Error fetching indicators for ${symbol}: ${e.message}`);
     return null;
@@ -124,8 +125,6 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   if (shortSignals.length >= 3) return 'SHORT';
   return null;
 }
-
-
 
 // Mở vị thế
 async function openPosition(symbol, side, amount) {
@@ -190,7 +189,6 @@ async function openPosition(symbol, side, amount) {
   }
 }
 
-
 // Kiểm tra vị thế
 async function checkPositions() {
   try {
@@ -213,9 +211,32 @@ async function checkPositions() {
       }
     }
 
+    // Kiểm tra các vị thế đã đóng (do TP hoặc SL)
     for (const symbol of [...activePositions.keys()]) {
       if (!openSymbols.has(symbol)) {
-        logToFile(`🟥 Position closed: ${symbol}`);
+        const position = activePositions.get(symbol);
+        const ticker = await exchange.fetchTicker(symbol);
+        const currentPrice = ticker.last;
+        let closeReason = 'Unknown';
+
+        // Xác định lý do đóng vị thế (TP hoặc SL)
+        if (position.tp && position.sl) {
+          if (position.side === 'buy') {
+            if (currentPrice >= position.tp) {
+              closeReason = 'Take Profit';
+            } else if (currentPrice <= position.sl) {
+              closeReason = 'Stop Loss';
+            }
+          } else {
+            if (currentPrice <= position.tp) {
+              closeReason = 'Take Profit';
+            } else if (currentPrice >= position.sl) {
+              closeReason = 'Stop Loss';
+            }
+          }
+        }
+
+        logToFile(`🟥 Position closed: ${symbol} (${closeReason}) at ${currentPrice}`);
         activePositions.delete(symbol);
       }
     }
@@ -235,6 +256,17 @@ async function runBot() {
 
       await checkPositions();
 
+      // Kiểm tra nếu đạt mục tiêu vốn $1000
+      if (balance >= targetBalance) {
+        logToFile(`🎯 Target balance of ${targetBalance} USDT reached! Monitoring open positions only.`);
+        if (activePositions.size === 0) {
+          logToFile(`✅ No open positions left. Stopping bot.`);
+          break; // Thoát vòng lặp nếu không còn vị thế mở
+        }
+        await sleep(60000);
+        continue; // Tiếp tục kiểm tra các vị thế mở
+      }
+
       if (activePositions.size >= maxPositions) {
         logToFile(`⚠️ Max positions reached (${maxPositions}), waiting...`);
         await sleep(60000);
@@ -247,7 +279,6 @@ async function runBot() {
         continue;
       }
 
-
       const tradingPairs = await getTradingPairs();
       if (tradingPairs.length === 0) {
         await sleep(60000);
@@ -259,31 +290,31 @@ async function runBot() {
       for (const symbol of tradingPairs) {
         if (activePositions.size >= maxPositions) break;
         if (activePositions.has(symbol)) continue;
-      
+
         const indicators = await fetchIndicators(symbol);
         if (!indicators) continue;
-      
+
         const signal = analyze(indicators);
         if (signal) {
           candidates.push({ symbol, signal, volume: indicators.volumes.at(-1) });
         }
-      
-        await sleep(1000); // giảm nhẹ thời gian sleep để xử lý nhanh hơn
+
+        await sleep(1000);
       }
+
       candidates.sort((a, b) => b.volume - a.volume);
       for (const candidate of candidates) {
         if (activePositions.size >= maxPositions) break;
-      
+
         const side = candidate.signal === 'LONG' ? 'buy' : 'sell';
         await openPosition(candidate.symbol, side, tradeAmount);
-        await sleep(500); // ngủ nhẹ để tránh rate limit
-      }     
-    }
-    catch (e) {
+        await sleep(500);
+      }
+    } catch (e) {
       logToFile(`❌ Error in bot: ${e.message}`);
     }
 
-    await sleep(60000); // Thời gian giữa các vòng lặp
+    await sleep(60000);
   }
 }
 
