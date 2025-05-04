@@ -13,7 +13,7 @@ const exchange = new ccxt.binance({
 });
 
 // Cấu hình bot
-const maxPositions = 5;
+const maxPositions = 4;
 const tradeAmount = 10; // Each trade is exactly $10
 const leverage = 7;
 const profitTarget = 2;
@@ -67,7 +67,8 @@ async function getTradingPairs() {
 
     // Sắp xếp theo volume giảm dần
     const sorted = volumes.sort((a, b) => b.volume - a.volume);
-    const tradingPairs = sorted.slice(0, 20).map(v => v.symbol);
+    const tradingPairs = sorted.map(v => v.symbol);
+    // const tradingPairs = sorted.slice(0, 20).map(v => v.symbol);
 
 
     logToFile(`✅ Loaded ${tradingPairs.length} USDT pairs, sorted by volume.`);
