@@ -250,6 +250,7 @@ async function openPosition(symbol, side, tradeAmount) {
 
     const orderSide = side.toLowerCase();
     const positionSide = side === 'LONG' ? 'LONG' : 'SHORT';
+    const oppositeSide = orderSide === 'buy' ? 'sell' : 'buy';
 
     const order = await withRetry(() => exchange.createOrder(symbol, 'market', orderSide, amount, undefined, {
       positionSide,
@@ -257,21 +258,27 @@ async function openPosition(symbol, side, tradeAmount) {
     }));
 
     const entryPrice = order.price || price;
+
+    const profitRatio = profitTarget / tradeAmount;
+    const lossRatio = lossLimit / tradeAmount;
+
     const tpPrice = side === 'LONG'
-      ? entryPrice * (1 + profitTarget / (entryPrice * amount))
-      : entryPrice * (1 - profitTarget / (entryPrice * amount));
+      ? entryPrice * (1 + profitRatio)
+      : entryPrice * (1 - profitRatio);
 
     const slPrice = side === 'LONG'
-      ? entryPrice * (1 - lossLimit / (entryPrice * amount))
-      : entryPrice * (1 + lossLimit / (entryPrice * amount));
+      ? entryPrice * (1 - lossRatio)
+      : entryPrice * (1 + lossRatio);
 
-    await withRetry(() => exchange.createOrder(symbol, 'take_profit_market', orderSide === 'buy' ? 'sell' : 'buy', amount, undefined, {
+    await withRetry(() => exchange.createOrder(symbol, 'take_profit_market', oppositeSide, amount, undefined, {
       stopPrice: tpPrice,
+      reduceOnly: true,
       closePosition: true,
     }));
 
-    await withRetry(() => exchange.createOrder(symbol, 'stop_market', orderSide === 'buy' ? 'sell' : 'buy', amount, undefined, {
+    await withRetry(() => exchange.createOrder(symbol, 'stop_market', oppositeSide, amount, undefined, {
       stopPrice: slPrice,
+      reduceOnly: true,
       closePosition: true,
     }));
 
@@ -292,9 +299,6 @@ async function openPosition(symbol, side, tradeAmount) {
     return false;
   }
 }
-
-
-
 // Kiểm tra vị thế
 async function checkPositions() {
   try {
