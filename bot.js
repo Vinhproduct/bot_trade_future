@@ -227,78 +227,57 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
 }
 
 // Mở vị thế
-async function openPosition(symbol, side, tradeAmount) {
+async function openPosition(symbol, side, entryPrice, quantity, leverage) {
+  const positionSide = side === 'BUY' ? 'LONG' : 'SHORT';
+  const oppositeSide = side === 'BUY' ? 'SELL' : 'BUY';
+
+  const tpAmount = 2.25; // lợi nhuận mục tiêu
+  const slAmount = 3; // mức lỗ tối đa
+
+  // Tính toán TP và SL theo tỉ lệ vốn (với giả định đòn bẩy đã được áp dụng)
+  const tpPrice = side === 'BUY'
+    ? entryPrice + (tpAmount / quantity)
+    : entryPrice - (tpAmount / quantity);
+
+  const slPrice = side === 'BUY'
+    ? entryPrice - (slAmount / quantity)
+    : entryPrice + (slAmount / quantity);
+
   try {
-    const market = exchange.market(symbol);
-    if (!market || !market.active) {
-      logToFile(`❌ Symbol ${symbol} không hợp lệ hoặc không hoạt động`);
-      return false;
-    }
-
-    await withRetry(() => exchange.setLeverage(leverage, symbol));
-
-    const ticker = await withRetry(() => exchange.fetchTicker(symbol));
-    const price = ticker.last;
-    const amount = parseFloat((tradeAmount / price).toFixed(market.precision.amount));
-
-    const balance = await withRetry(() => exchange.fetchBalance());
-    const usdtBalance = balance.total.USDT || 0;
-    if (usdtBalance < tradeAmount) {
-      logToFile(`❌ Không đủ USDT để vào lệnh ${symbol}, còn lại: ${usdtBalance.toFixed(2)} USDT`);
-      return false;
-    }
-
-    const orderSide = side.toLowerCase();
-    const positionSide = side === 'LONG' ? 'LONG' : 'SHORT';
-    const oppositeSide = orderSide === 'buy' ? 'sell' : 'buy';
-
-    const order = await withRetry(() => exchange.createOrder(symbol, 'market', orderSide, amount, undefined, {
+    // Đặt lệnh Market để vào lệnh
+    const order = await binance.futuresMarketOrder(symbol, side, quantity, {
       positionSide,
-      reduceOnly: false,
-    }));
-
-    const entryPrice = order.price || price;
-
-    const profitRatio = profitTarget / tradeAmount;
-    const lossRatio = lossLimit / tradeAmount;
-
-    const tpPrice = side === 'LONG'
-      ? entryPrice * (1 + profitRatio)
-      : entryPrice * (1 - profitRatio);
-
-    const slPrice = side === 'LONG'
-      ? entryPrice * (1 - lossRatio)
-      : entryPrice * (1 + lossRatio);
-
-    await withRetry(() => exchange.createOrder(symbol, 'take_profit_market', oppositeSide, amount, undefined, {
-      stopPrice: tpPrice,
-      reduceOnly: true,
-      closePosition: true,
-    }));
-
-    await withRetry(() => exchange.createOrder(symbol, 'stop_market', oppositeSide, amount, undefined, {
-      stopPrice: slPrice,
-      reduceOnly: true,
-      closePosition: true,
-    }));
-
-    activePositions.set(symbol, {
-      symbol,
-      side,
-      entryPrice,
-      amount,
-      time: Date.now(),
     });
-    savePositions();
 
-    logToFile(`✅ Đã mở vị thế ${side} ${symbol} @${entryPrice.toFixed(4)} | TP: ${tpPrice.toFixed(4)} | SL: ${slPrice.toFixed(4)}`);
-    return true;
-  } catch (e) {
-    logToFile(`❌ Lỗi khi mở vị thế cho ${symbol}: ${e.message}`);
-    symbolBlacklist.add(symbol);
-    return false;
+    logToTerminal(`[VÀO LỆNH] ${symbol} | ${positionSide} | Giá: ${entryPrice.toFixed(4)} | SL: ${slPrice.toFixed(4)} | TP: ${tpPrice.toFixed(4)} | Số lượng: ${quantity}`);
+
+    // Gửi lệnh Stop Loss
+    await binance.futuresOrder('STOP_MARKET', symbol, null, null, {
+      stopPrice: slPrice.toFixed(4),
+      closePosition: true,
+      side: oppositeSide,
+      positionSide,
+      timeInForce: 'GTC',
+      workingType: 'MARK_PRICE',
+    });
+
+    // Gửi lệnh Take Profit
+    await binance.futuresOrder('TAKE_PROFIT_MARKET', symbol, null, null, {
+      stopPrice: tpPrice.toFixed(4),
+      closePosition: true,
+      side: oppositeSide,
+      positionSide,
+      timeInForce: 'GTC',
+      workingType: 'MARK_PRICE',
+    });
+
+    logToTerminal(`[LỆNH TP/SL] Đã đặt TP tại ${tpPrice.toFixed(4)} và SL tại ${slPrice.toFixed(4)} cho ${symbol}`);
+  } catch (err) {
+    console.error(`[LỖI OPEN] ${symbol} - ${err.message}`);
+    logToTerminal(`[LỖI] Không thể mở lệnh ${symbol} - ${err.message}`);
   }
 }
+
 // Kiểm tra vị thế
 async function checkPositions() {
   try {
@@ -416,6 +395,7 @@ async function runBot() {
   loadPositions();
 
   while (true) {
+    logToFile(`🕒 Vòng mới lúc ${new Date().toLocaleString()}`);
     try {
       const balanceInfo = await withRetry(() => exchange.fetchBalance());
       const balance = balanceInfo.total.USDT || 0;
@@ -439,16 +419,16 @@ async function runBot() {
         continue;
       }
 
-      const requiredMargin = tradeAmount / leverage;
-      if (balance < requiredMargin) {
-        logToFile(`❌ Số dư không đủ: ${balance} USDT, cần ${requiredMargin} USDT`);
+      const tradingPairs = await getTradingPairs();
+      if (tradingPairs.length === 0) {
+        logToFile('⚠️ Không tìm thấy cặp giao dịch hợp lệ, thử lại sau...');
         await sleep(60000);
         continue;
       }
 
-      const tradingPairs = await getTradingPairs();
-      if (tradingPairs.length === 0) {
-        logToFile('⚠️ Không tìm thấy cặp giao dịch hợp lệ, thử lại sau...');
+      const requiredMargin = tradeAmount / leverage;
+      if (balance < requiredMargin) {
+        logToFile(`❌ Số dư không đủ: ${balance} USDT, cần ${requiredMargin} USDT`);
         await sleep(60000);
         continue;
       }
@@ -458,15 +438,19 @@ async function runBot() {
         if (activePositions.size >= maxPositions) break;
         if (activePositions.has(symbol) || symbolBlacklist.has(symbol)) continue;
 
-        const indicators = await fetchIndicators(symbol);
-        if (!indicators) continue;
+        try {
+          const indicators = await withRetry(() => fetchIndicators(symbol));
+          if (!indicators) continue;
 
-        const signal = analyze(indicators);
-        if (signal) {
-          candidates.push({ symbol, signal, volume: indicators.volumes.at(-1) });
+          const signal = analyze(indicators);
+          if (signal) {
+            candidates.push({ symbol, signal, volume: indicators.volumes.at(-1) });
+          }
+        } catch (e) {
+          logToFile(`⚠️ Lỗi khi xử lý ${symbol}: ${e.message}`);
         }
 
-        await sleep(1000);
+        await sleep(1000); // tránh spam API
       }
 
       candidates.sort((a, b) => b.volume - a.volume);
@@ -484,10 +468,9 @@ async function runBot() {
       logToFile(`❌ Lỗi trong bot: ${e.message}, Chi tiết: ${JSON.stringify(e)}`);
     }
 
-    await sleep(60000);
+    await sleep(60000); // nghỉ giữa mỗi vòng
   }
 }
-
 // Kiểm tra API key
 if (!process.env.API_KEY || !process.env.API_SECRET) {
   logToFile('❌ Thiếu API_KEY hoặc API_SECRET trong file .env');
