@@ -224,7 +224,7 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const low = Math.min(previousClose, latestClose);
   const candleBody = Math.abs(latestClose - previousClose);
   const candleRange = high - low;
-  const isStrongCandle = candleBody > candleRange * 0.7;
+  const isStrongCandle = candleBody > candleRange * 0.5;
   if (!isStrongCandle) return null;
 
   let longScore = 0;
