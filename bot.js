@@ -240,12 +240,12 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   let shortScore = 0;
 
   // MACD cross
-  if (latestMACDHist > 0 && previousMACDHist <= 0) longScore += 1;
-  if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 1;
+  if (latestMACDHist > 0 && previousMACDHist <= 0) longScore += 0.5;
+  if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 0.5;
 
   // RSI cực trị
-  if (latestRSI < 30 && previousRSI < 30) longScore += 1;
-  if (latestRSI > 70 && previousRSI > 70) shortScore += 1;
+  if (latestRSI < 30 && previousRSI < 30) longScore += 0.5;
+  if (latestRSI > 70 && previousRSI > 70) shortScore += 0.5;
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
@@ -268,8 +268,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const isUptrend = latestClose > ema200;
   const isDowntrend = latestClose < ema200;
 
-  if (longScore >= 2.5 && longScore > shortScore && isUptrend) return 'LONG';
-  if (shortScore >= 2.5 && shortScore > longScore && isDowntrend) return 'SHORT';
+  if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
+  if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
 
   return null;
 }
