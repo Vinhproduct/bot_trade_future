@@ -280,65 +280,93 @@ function roundQuantityUp(quantity, stepSize) {
   return Math.ceil(quantity / stepSize) * stepSize;
 }
 
-async function openPosition(symbol, side, entryPrice, tradeAmountUSDT, leverage) {
+async function openPosition(symbol, side, entryPrice, quantity, leverage) {
+  // Kiểm tra input đầu vào
   if (!entryPrice || entryPrice <= 0 || isNaN(entryPrice)) {
     logToFile(`❌ entryPrice không hợp lệ cho ${symbol}: ${entryPrice}`);
     return false;
   }
 
+  if (!quantity || quantity <= 0 || isNaN(quantity)) {
+    logToFile(`❌ Quantity không hợp lệ cho ${symbol}: ${quantity}`);
+    return false;
+  }
+
   try {
-    const market = await exchange.loadMarkets().then(() => exchange.market(symbol));
-    const filters = market.info.filters;
-    const lotSizeFilter = filters.find(f => f.filterType === 'LOT_SIZE');
-
-    const stepSize = parseFloat(lotSizeFilter.stepSize);
-    const minQty = parseFloat(lotSizeFilter.minQty);
-
-    let quantity = tradeAmountUSDT / entryPrice;
-    quantity = roundQuantityUp(quantity, stepSize);
-
-    if (quantity < minQty) {
-      quantity = minQty;  // Đảm bảo không nhỏ hơn minQty
+    // Lấy thông tin thị trường từ exchange
+    const market = exchange.markets[symbol];
+    if (!market) {
+      logToFile(`❌ Không tìm thấy thông tin thị trường cho ${symbol}`);
+      return false;
     }
 
-    // Đảm bảo quantity là bội số stepSize (lặp lại round lên nếu cần)
-    quantity = roundQuantityUp(quantity, stepSize);
+    // Giới hạn tối thiểu về giá trị lệnh (notional) trên Binance Futures USDT là 5 USD
+    const minNotional = 5;
 
-    logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} với giá vào lệnh ${entryPrice}, khối lượng ${quantity}, đòn bẩy ${leverage}x`);
+    // Lấy stepSize (bước nhảy khối lượng) để làm tròn
+    const stepSize = market.limits.amount.step || 0.0001;
+
+    // Tính tổng giá trị lệnh hiện tại
+    const notional = entryPrice * quantity;
+
+    let adjustedQuantity = quantity;
+
+    // Nếu giá trị lệnh nhỏ hơn minNotional thì điều chỉnh lại quantity
+    if (notional < minNotional) {
+      adjustedQuantity = minNotional / entryPrice;
+      // Làm tròn xuống theo stepSize để tránh lỗi precision
+      adjustedQuantity = Math.floor(adjustedQuantity / stepSize) * stepSize;
+
+      // Kiểm tra nếu vẫn nhỏ hơn stepSize thì không thể đặt lệnh
+      if (adjustedQuantity < stepSize) {
+        logToFile(`❌ Khối lượng sau điều chỉnh (${adjustedQuantity}) vẫn nhỏ hơn bước nhảy tối thiểu (${stepSize}) cho ${symbol}`);
+        return false;
+      }
+
+      logToFile(`⚠️ Điều chỉnh khối lượng cho ${symbol} từ ${quantity} thành ${adjustedQuantity} để đạt min notional ${minNotional}`);
+    }
+
+    logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} với giá vào lệnh ${entryPrice}, khối lượng ${adjustedQuantity}, đòn bẩy ${leverage}x`);
 
     await exchange.setLeverage(leverage, symbol);
 
-    // Chuyển side 'long'/'short' thành 'buy' hoặc 'sell'
-    const orderSide = (side.toLowerCase() === 'long') ? 'buy' : 'sell';
-    const order = await exchange.createMarketOrder(symbol, orderSide, quantity);
+    // Binance yêu cầu orderSide là "buy" hoặc "sell" thay vì "long"/"short"
+    const orderSide = side.toLowerCase() === 'long' ? 'buy' : 'sell';
 
+    // Tạo lệnh thị trường
+    const order = await exchange.createMarketOrder(symbol, orderSide, adjustedQuantity);
 
-
+    // Lấy giá thực tế sau khi khớp lệnh
     const filledPrice = order?.average || entryPrice;
 
-    const riskAmount = 3;
-    const priceChange = riskAmount / (quantity * leverage);
+    // Tính giá Take Profit (TP) và Stop Loss (SL)
+    const riskAmount = 3; // Lời/lỗ cố định $3
+    const priceChange = riskAmount / (adjustedQuantity * leverage);
     const tpPrice = side === 'long' ? filledPrice + priceChange : filledPrice - priceChange;
     const slPrice = side === 'long' ? filledPrice - priceChange : filledPrice + priceChange;
 
-    await exchange.createOrder(symbol, 'take_profit_market', side === 'long' ? 'sell' : 'buy', quantity, null, {
+    // Tạo lệnh TP (Take Profit)
+    await exchange.createOrder(symbol, 'take_profit_market', side === 'long' ? 'sell' : 'buy', adjustedQuantity, null, {
       stopPrice: tpPrice,
       closePosition: true
     });
 
-    await exchange.createOrder(symbol, 'stop_market', side === 'long' ? 'sell' : 'buy', quantity, null, {
+    // Tạo lệnh SL (Stop Loss)
+    await exchange.createOrder(symbol, 'stop_market', side === 'long' ? 'sell' : 'buy', adjustedQuantity, null, {
       stopPrice: slPrice,
       closePosition: true
     });
 
     logToFile(`✅ Đã mở lệnh ${side.toUpperCase()} ${symbol}. TP: ${tpPrice}, SL: ${slPrice}`);
+
     return true;
 
   } catch (error) {
-    logToFile(`❌ Lỗi khi mở lệnh ${side.toUpperCase()} cho ${symbol}: ${error.message}`);
+    logToFile(`❌ Lỗi khi mở lệnh ${side.toUpperCase()} cho ${symbol}: ${error.message || error}`);
     return false;
   }
 }
+
 
 
 
