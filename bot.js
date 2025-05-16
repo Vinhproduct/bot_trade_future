@@ -230,16 +230,16 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   let longScore = 0;
   let shortScore = 0;
 
-  if (latestMACDHist > 0 && previousMACDHist <= 0) longScore += 1.5;
-  if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 1.5;
+  if (latestMACDHist > 0 && previousMACDHist <= 0) longScore += 1;
+  if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 1;
 
   if (currentVolume > volumeAvg * 2) {
     if (latestRSI < 50) longScore += 1.5;
     else shortScore += 1.5;
   }
 
-  if (latestRSI < 30 && previousRSI < 30) longScore += 1.5;
-  if (latestRSI > 70 && previousRSI > 70) shortScore += 1.5;
+  if (latestRSI < 30 && previousRSI < 30) longScore += 1;
+  if (latestRSI > 70 && previousRSI > 70) shortScore += 1;
 
   if (latestClose > latestSMA) longScore += 0.5;
   else shortScore += 0.5;
