@@ -167,7 +167,7 @@ async function fetchIndicators(symbol) {
       return null;
     }
 
-    const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 50));
+    const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 100));
     if (!ohlcv || ohlcv.length < 50) {
       logToFile(`❌ Không đủ dữ liệu cho ${symbol}: ${ohlcv?.length || 0} nến`);
       symbolBlacklist.add(symbol);
@@ -268,8 +268,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const isUptrend = latestClose > ema200;
   const isDowntrend = latestClose < ema200;
 
-  if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
-  if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
+  if (longScore >= 2 && longScore > shortScore && isUptrend) return 'LONG';
+  if (shortScore >= 2 && shortScore > longScore && isDowntrend) return 'SHORT';
 
   return null;
 }
