@@ -249,8 +249,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
-    if (latestRSI < 50) longScore += 1.5;
-    else shortScore += 1.5;
+    if (latestRSI < 50) longScore += 1;
+    else shortScore += 1;
   }
 
   // Đường trung bình
