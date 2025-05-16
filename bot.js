@@ -313,6 +313,7 @@ async function openPosition(symbol, side, entryPrice, tradeAmountUSDT, leverage)
     const order = await exchange.createMarketOrder(symbol, orderSide, quantity);
 
 
+
     const filledPrice = order?.average || entryPrice;
 
     const riskAmount = 3;
