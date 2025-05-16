@@ -275,69 +275,60 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
 }
 
 // Mở vị thế
-async function openPosition(symbol, side, entryPrice, tradeAmountUSDT = 30, leverage = 5) {
+function roundQuantityUp(quantity, stepSize) {
+  // Làm tròn lên theo stepSize (ví dụ stepSize = 0.01)
+  return Math.ceil(quantity / stepSize) * stepSize;
+}
+
+async function openPosition(symbol, side, entryPrice, tradeAmountUSDT, leverage) {
+  if (!entryPrice || entryPrice <= 0 || isNaN(entryPrice)) {
+    logToFile(`❌ entryPrice không hợp lệ cho ${symbol}: ${entryPrice}`);
+    return false;
+  }
+
   try {
-    // Kiểm tra giá đầu vào
-    if (!entryPrice || entryPrice <= 0 || isNaN(entryPrice)) {
-      logToFile(`❌ entryPrice không hợp lệ cho ${symbol}: ${entryPrice}`);
-      return false;
-    }
+    const market = await exchange.loadMarkets().then(() => exchange.market(symbol));
+    const filters = market.info.filters;
+    const lotSizeFilter = filters.find(f => f.filterType === 'LOT_SIZE');
 
-    // Load thông tin thị trường để biết precision, minQty, stepSize
-    await exchange.loadMarkets();
-    const market = exchange.markets[symbol];
-    if (!market) {
-      logToFile(`❌ Không tìm thấy thông tin thị trường cho ${symbol}`);
-      return false;
-    }
+    const stepSize = parseFloat(lotSizeFilter.stepSize);
+    const minQty = parseFloat(lotSizeFilter.minQty);
 
-    const precision = market.precision?.amount || 3;
-    const minQty = market.limits?.amount?.min || 0.0001;
-    const stepSize = market.info?.filters?.find(f => f.filterType === 'LOT_SIZE')?.stepSize || '0.0001';
-    const step = parseFloat(stepSize);
-
-    // Tính khối lượng theo vốn và đòn bẩy
     let quantity = tradeAmountUSDT / entryPrice;
-    quantity = Math.floor(quantity / step) * step; // Làm tròn xuống theo stepSize
+    quantity = roundQuantityUp(quantity, stepSize);
 
     if (quantity < minQty) {
-      logToFile(`❌ Khối lượng ${quantity} nhỏ hơn minQty (${minQty}) cho ${symbol}`);
-      return false;
+      quantity = minQty;  // Đảm bảo không nhỏ hơn minQty
     }
 
-    quantity = parseFloat(quantity.toFixed(precision));
+    // Đảm bảo quantity là bội số stepSize (lặp lại round lên nếu cần)
+    quantity = roundQuantityUp(quantity, stepSize);
 
-    // Log mở vị thế
     logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} với giá vào lệnh ${entryPrice}, khối lượng ${quantity}, đòn bẩy ${leverage}x`);
 
-    // Đặt đòn bẩy
     await exchange.setLeverage(leverage, symbol);
 
-    // Mở lệnh thị trường
     const orderSide = side.toLowerCase();
     const order = await exchange.createMarketOrder(symbol, orderSide, quantity);
 
     const filledPrice = order?.average || entryPrice;
 
-    // Tính TP/SL theo mức lời/lỗ $3
     const riskAmount = 3;
     const priceChange = riskAmount / (quantity * leverage);
     const tpPrice = side === 'long' ? filledPrice + priceChange : filledPrice - priceChange;
     const slPrice = side === 'long' ? filledPrice - priceChange : filledPrice + priceChange;
 
-    // Tạo TP
     await exchange.createOrder(symbol, 'take_profit_market', side === 'long' ? 'sell' : 'buy', quantity, null, {
-      stopPrice: parseFloat(tpPrice.toFixed(market.precision.price)),
+      stopPrice: tpPrice,
       closePosition: true
     });
 
-    // Tạo SL
     await exchange.createOrder(symbol, 'stop_market', side === 'long' ? 'sell' : 'buy', quantity, null, {
-      stopPrice: parseFloat(slPrice.toFixed(market.precision.price)),
+      stopPrice: slPrice,
       closePosition: true
     });
 
-    logToFile(`✅ Đã mở lệnh ${side.toUpperCase()} ${symbol}. TP: ${tpPrice.toFixed(3)}, SL: ${slPrice.toFixed(3)}`);
+    logToFile(`✅ Đã mở lệnh ${side.toUpperCase()} ${symbol}. TP: ${tpPrice}, SL: ${slPrice}`);
     return true;
 
   } catch (error) {
@@ -345,6 +336,7 @@ async function openPosition(symbol, side, entryPrice, tradeAmountUSDT = 30, leve
     return false;
   }
 }
+
 
 
 // Kiểm tra vị thế
