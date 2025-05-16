@@ -110,7 +110,7 @@ async function getTradingPairs() {
     const filtered = [];
     for (const { symbol } of sortedTop) {
       try {
-        const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 100));
+        const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 50));
         if (!ohlcv || ohlcv.length < 50) {
           logToFile(`⚠️ Không đủ dữ liệu OHLCV cho ${symbol}: ${ohlcv?.length || 0} nến`);
           continue;
