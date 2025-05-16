@@ -208,18 +208,23 @@ async function fetchIndicators(symbol) {
 function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const latestClose = closes.at(-1);
   const previousClose = closes.at(-2);
+  const latestOpen = closes.at(-2); // giả định close trước là open hiện tại
+  const previousOpen = closes.at(-3);
   const latestRSI = rsi.at(-1);
   const previousRSI = rsi.at(-2);
   const latestMACDHist = macd.at(-1)?.histogram;
   const previousMACDHist = macd.at(-2)?.histogram;
   const latestSMA = sma.at(-1);
   const latestEMA = ema.at(-1);
+  const ema200 = ema.at(-1); // bạn cần truyền EMA200 vào đây nếu có
   const currentVolume = volumes.at(-1);
 
+  // Lọc nến yếu và volume thấp
   const isDoji = Math.abs(latestClose - previousClose) < (latestClose * 0.001);
   const isLowVolume = currentVolume < volumeAvg * 0.7;
   if (isDoji || isLowVolume) return null;
 
+  // Tính lực nến
   const high = Math.max(previousClose, latestClose);
   const low = Math.min(previousClose, latestClose);
   const candleBody = Math.abs(latestClose - previousClose);
@@ -227,28 +232,45 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   const isStrongCandle = candleBody > candleRange * 0.5;
   if (!isStrongCandle) return null;
 
+  // Tính tín hiệu nến engulfing đơn giản
+  const isBullishEngulfing = previousClose < latestOpen && latestClose > latestOpen && latestClose > previousOpen;
+  const isBearishEngulfing = previousClose > latestOpen && latestClose < latestOpen && latestClose < previousOpen;
+
   let longScore = 0;
   let shortScore = 0;
 
+  // MACD cross
   if (latestMACDHist > 0 && previousMACDHist <= 0) longScore += 1;
   if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 1;
 
+  // RSI cực trị
+  if (latestRSI < 30 && previousRSI < 30) longScore += 1;
+  if (latestRSI > 70 && previousRSI > 70) shortScore += 1;
+
+  // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
     if (latestRSI < 50) longScore += 1.5;
     else shortScore += 1.5;
   }
 
-  if (latestRSI < 30 && previousRSI < 30) longScore += 1;
-  if (latestRSI > 70 && previousRSI > 70) shortScore += 1;
-
+  // Đường trung bình
   if (latestClose > latestSMA) longScore += 0.5;
   else shortScore += 0.5;
 
   if (latestClose > latestEMA) longScore += 0.5;
   else shortScore += 0.5;
 
-  if (longScore >= 2.5 && longScore > shortScore) return 'LONG';
-  if (shortScore >= 2.5 && shortScore > longScore) return 'SHORT';
+  // Nến engulfing
+  if (isBullishEngulfing) longScore += 1;
+  if (isBearishEngulfing) shortScore += 1;
+
+  // Lọc xu hướng chính bằng EMA200 (cần truyền vào đúng)
+  const isUptrend = latestClose > ema200;
+  const isDowntrend = latestClose < ema200;
+
+  if (longScore >= 3 && longScore > shortScore && isUptrend) return 'LONG';
+  if (shortScore >= 3 && shortScore > longScore && isDowntrend) return 'SHORT';
+
   return null;
 }
 
