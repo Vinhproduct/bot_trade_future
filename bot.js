@@ -281,7 +281,6 @@ function roundQuantityUp(quantity, stepSize) {
 }
 
 async function openPosition(symbol, side, entryPrice, quantity, leverage) {
-  // Kiểm tra input đầu vào
   if (!entryPrice || entryPrice <= 0 || isNaN(entryPrice)) {
     logToFile(`❌ entryPrice không hợp lệ cho ${symbol}: ${entryPrice}`);
     return false;
@@ -293,36 +292,28 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
   }
 
   try {
-    // Lấy thông tin thị trường từ exchange
+    logToFile(`DEBUG: symbol=${symbol}, side=${side}, entryPrice=${entryPrice}, quantity=${quantity}, leverage=${leverage}`);
+
     const market = exchange.markets[symbol];
     if (!market) {
-      logToFile(`❌ Không tìm thấy thông tin thị trường cho ${symbol}`);
+      logToFile(`❌ Không tìm thấy thị trường: ${symbol}`);
       return false;
     }
 
-    // Giới hạn tối thiểu về giá trị lệnh (notional) trên Binance Futures USDT là 5 USD
     const minNotional = 5;
-
-    // Lấy stepSize (bước nhảy khối lượng) để làm tròn
     const stepSize = market.limits.amount.step || 0.0001;
-
-    // Tính tổng giá trị lệnh hiện tại
     const notional = entryPrice * quantity;
 
     let adjustedQuantity = quantity;
 
-    // Nếu giá trị lệnh nhỏ hơn minNotional thì điều chỉnh lại quantity
     if (notional < minNotional) {
       adjustedQuantity = minNotional / entryPrice;
-      // Làm tròn xuống theo stepSize để tránh lỗi precision
       adjustedQuantity = Math.floor(adjustedQuantity / stepSize) * stepSize;
 
-      // Kiểm tra nếu vẫn nhỏ hơn stepSize thì không thể đặt lệnh
       if (adjustedQuantity < stepSize) {
-        logToFile(`❌ Khối lượng sau điều chỉnh (${adjustedQuantity}) vẫn nhỏ hơn bước nhảy tối thiểu (${stepSize}) cho ${symbol}`);
+        logToFile(`❌ Khối lượng sau điều chỉnh (${adjustedQuantity}) nhỏ hơn bước nhảy tối thiểu (${stepSize}) cho ${symbol}`);
         return false;
       }
-
       logToFile(`⚠️ Điều chỉnh khối lượng cho ${symbol} từ ${quantity} thành ${adjustedQuantity} để đạt min notional ${minNotional}`);
     }
 
@@ -330,28 +321,30 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
 
     await exchange.setLeverage(leverage, symbol);
 
-    // Binance yêu cầu orderSide là "buy" hoặc "sell" thay vì "long"/"short"
     const orderSide = side.toLowerCase() === 'long' ? 'buy' : 'sell';
+    logToFile(`DEBUG: orderSide=${orderSide}`);
 
-    // Tạo lệnh thị trường
-    const order = await exchange.createMarketOrder(symbol, orderSide, adjustedQuantity);
+    let order;
+    try {
+      order = await exchange.createMarketOrder(symbol, orderSide, adjustedQuantity);
+      logToFile(`DEBUG: order result = ${JSON.stringify(order)}`);
+    } catch (err) {
+      logToFile(`❌ Lỗi khi gọi createMarketOrder: ${err.message || err}`);
+      return false;
+    }
 
-    // Lấy giá thực tế sau khi khớp lệnh
     const filledPrice = order?.average || entryPrice;
 
-    // Tính giá Take Profit (TP) và Stop Loss (SL)
-    const riskAmount = 3; // Lời/lỗ cố định $3
+    const riskAmount = 3;
     const priceChange = riskAmount / (adjustedQuantity * leverage);
     const tpPrice = side === 'long' ? filledPrice + priceChange : filledPrice - priceChange;
     const slPrice = side === 'long' ? filledPrice - priceChange : filledPrice + priceChange;
 
-    // Tạo lệnh TP (Take Profit)
     await exchange.createOrder(symbol, 'take_profit_market', side === 'long' ? 'sell' : 'buy', adjustedQuantity, null, {
       stopPrice: tpPrice,
       closePosition: true
     });
 
-    // Tạo lệnh SL (Stop Loss)
     await exchange.createOrder(symbol, 'stop_market', side === 'long' ? 'sell' : 'buy', adjustedQuantity, null, {
       stopPrice: slPrice,
       closePosition: true
@@ -366,8 +359,6 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
     return false;
   }
 }
-
-
 
 
 // Kiểm tra vị thế
