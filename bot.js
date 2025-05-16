@@ -247,8 +247,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes }) {
   if (latestClose > latestEMA) longScore += 0.5;
   else shortScore += 0.5;
 
-  if (longScore >= 2.5) return 'LONG';
-  if (shortScore >= 2.5) return 'SHORT';
+  if (longScore >= 2.5 && longScore > shortScore) return 'LONG';
+  if (shortScore >= 2.5 && shortScore > longScore) return 'SHORT';
   return null;
 }
 
