@@ -308,8 +308,10 @@ async function openPosition(symbol, side, entryPrice, tradeAmountUSDT, leverage)
 
     await exchange.setLeverage(leverage, symbol);
 
-    const orderSide = side.toLowerCase();
+    // Chuyển side 'long'/'short' thành 'buy' hoặc 'sell'
+    const orderSide = (side.toLowerCase() === 'long') ? 'buy' : 'sell';
     const order = await exchange.createMarketOrder(symbol, orderSide, quantity);
+
 
     const filledPrice = order?.average || entryPrice;
 
