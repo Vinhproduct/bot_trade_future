@@ -28,8 +28,9 @@ const targetBalance = 1000; // Mục tiêu vốn $1000
 const symbolBlacklist = new Set(); // Danh sách đen cho symbol lỗi
 // cấu hình giờ địa phương:
 const moment = require('moment-timezone');
-const now = moment().tz("Asia/Ho_Chi_Minh");
-console.log("Giờ Việt Nam:", now.format("YYYY-MM-DD HH:mm:ss"));
+
+const vietnamTime = moment().tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD HH:mm:ss");
+console.log("🕒 Giờ Việt Nam:", vietnamTime);
 
 // Ghi log
 function logToFile(message) {
