@@ -1,0 +1,289 @@
+2025-05-16T10:08:25.332Z - [DEBUG] Top 30 symbol theo volume: ["ETH/USDT:USDT","BTC/USDT:USDT","SOL/USDT:USDT","NXPC/USDT:USDT","XRP/USDT:USDT","DOGE/USDT:USDT","1000PEPE/USDT:USDT","SUI/USDT:USDT","MOODENG/USDT:USDT","ETHFI/USDT:USDT","TRUMP/USDT:USDT","ADA/USDT:USDT","WIF/USDT:USDT","FARTCOIN/USDT:USDT","BNB/USDT:USDT","NEIRO/USDT:USDT","ENA/USDT:USDT","KAITO/USDT:USDT","LINK/USDT:USDT","AVAX/USDT:USDT","AAVE/USDT:USDT","PEOPLE/USDT:USDT","PNUT/USDT:USDT","ONDO/USDT:USDT","LTC/USDT:USDT","BROCCOLIF3B/USDT:USDT","OP/USDT:USDT","SYRUP/USDT:USDT","JELLYJELLY/USDT:USDT","VIRTUAL/USDT:USDT"]
+2025-05-16T10:08:25.647Z - [DEBUG] Đã thêm symbol: ETH/USDT
+2025-05-16T10:08:26.123Z - [DEBUG] Đã thêm symbol: BTC/USDT
+2025-05-16T10:08:26.607Z - [DEBUG] Đã thêm symbol: SOL/USDT
+2025-05-16T10:08:27.077Z - ⚠️ Độ sâu order book không đủ cho NXPC/USDT:USDT: 7521.87491
+2025-05-16T10:08:27.445Z - [DEBUG] Đã thêm symbol: XRP/USDT
+2025-05-16T10:08:27.916Z - [DEBUG] Đã thêm symbol: DOGE/USDT
+2025-05-16T10:08:28.392Z - ⚠️ Độ sâu order book không đủ cho 1000PEPE/USDT:USDT: 4554.385008599999
+2025-05-16T10:08:28.756Z - ⚠️ Độ sâu order book không đủ cho SUI/USDT:USDT: 92433.53961
+2025-05-16T10:08:29.113Z - ⚠️ Độ sâu order book không đủ cho MOODENG/USDT:USDT: 19584.564010000002
+2025-05-16T10:08:29.479Z - ⚠️ Độ sâu order book không đủ cho ETHFI/USDT:USDT: 68088.68276
+2025-05-16T10:08:29.838Z - [DEBUG] Đã thêm symbol: TRUMP/USDT
+2025-05-16T10:08:30.368Z - [DEBUG] Đã thêm symbol: ADA/USDT
+2025-05-16T10:08:30.848Z - [DEBUG] Đã thêm symbol: WIF/USDT
+2025-05-16T10:08:31.314Z - [DEBUG] Đã thêm symbol: FARTCOIN/USDT
+2025-05-16T10:08:31.784Z - [DEBUG] Đã thêm symbol: BNB/USDT
+2025-05-16T10:08:32.240Z - [DEBUG] Đã thêm symbol: NEIRO/USDT
+2025-05-16T10:08:32.713Z - [DEBUG] Đã thêm symbol: ENA/USDT
+2025-05-16T10:08:33.197Z - ⚠️ Độ sâu order book không đủ cho KAITO/USDT:USDT: 32832.84759
+2025-05-16T10:08:33.550Z - [DEBUG] Đã thêm symbol: LINK/USDT
+2025-05-16T10:08:34.031Z - [DEBUG] Đã thêm symbol: AVAX/USDT
+2025-05-16T10:08:34.572Z - ⚠️ Độ sâu order book không đủ cho AAVE/USDT:USDT: 89564.46
+2025-05-16T10:08:34.943Z - [DEBUG] Đã thêm symbol: PEOPLE/USDT
+2025-05-16T10:08:35.397Z - ⚠️ Độ sâu order book không đủ cho PNUT/USDT:USDT: 9073.22805
+2025-05-16T10:08:35.848Z - [DEBUG] Đã thêm symbol: ONDO/USDT
+2025-05-16T10:08:36.317Z - [DEBUG] Đã thêm symbol: LTC/USDT
+2025-05-16T10:08:36.793Z - ⚠️ Độ sâu order book không đủ cho BROCCOLIF3B/USDT:USDT: 5175.7845370000005
+2025-05-16T10:08:37.166Z - [DEBUG] Đã thêm symbol: OP/USDT
+2025-05-16T10:08:37.635Z - ⚠️ Độ sâu order book không đủ cho SYRUP/USDT:USDT: 3276.06754
+2025-05-16T10:08:38.008Z - ⚠️ Độ sâu order book không đủ cho JELLYJELLY/USDT:USDT: 45487.862890000004
+2025-05-16T10:08:38.361Z - ⚠️ Độ sâu order book không đủ cho VIRTUAL/USDT:USDT: 25997.39434
+2025-05-16T10:08:38.362Z - ✅ Đã chọn 18 cặp top volume: ["ETH/USDT","BTC/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","TRUMP/USDT","ADA/USDT","WIF/USDT","FARTCOIN/USDT","BNB/USDT","NEIRO/USDT","ENA/USDT","LINK/USDT","AVAX/USDT","PEOPLE/USDT","ONDO/USDT","LTC/USDT","OP/USDT"]
+2025-05-16T10:08:38.596Z - ℹ️ Không có tín hiệu rõ ràng trên ETH/USDT.
+2025-05-16T10:08:38.752Z - ℹ️ Không có tín hiệu rõ ràng trên BTC/USDT.
+2025-05-16T10:08:38.897Z - ℹ️ Không có tín hiệu rõ ràng trên SOL/USDT.
+2025-05-16T10:08:39.061Z - ℹ️ Không có tín hiệu rõ ràng trên XRP/USDT.
+2025-05-16T10:08:39.215Z - ℹ️ Không có tín hiệu rõ ràng trên DOGE/USDT.
+2025-05-16T10:08:39.387Z - ℹ️ Không có tín hiệu rõ ràng trên TRUMP/USDT.
+2025-05-16T10:08:39.545Z - ℹ️ Không có tín hiệu rõ ràng trên ADA/USDT.
+2025-05-16T10:08:39.709Z - ℹ️ Không có tín hiệu rõ ràng trên WIF/USDT.
+2025-05-16T10:08:39.865Z - ℹ️ Không có tín hiệu rõ ràng trên FARTCOIN/USDT.
+2025-05-16T10:08:40.026Z - ℹ️ Không có tín hiệu rõ ràng trên BNB/USDT.
+2025-05-16T10:08:40.179Z - ℹ️ Không có tín hiệu rõ ràng trên NEIRO/USDT.
+2025-05-16T10:08:40.332Z - ℹ️ Không có tín hiệu rõ ràng trên ENA/USDT.
+2025-05-16T10:08:40.487Z - ℹ️ Không có tín hiệu rõ ràng trên LINK/USDT.
+2025-05-16T10:08:40.652Z - ℹ️ Không có tín hiệu rõ ràng trên AVAX/USDT.
+2025-05-16T10:08:40.815Z - ℹ️ Không có tín hiệu rõ ràng trên PEOPLE/USDT.
+2025-05-16T10:08:40.966Z - ℹ️ Không có tín hiệu rõ ràng trên ONDO/USDT.
+2025-05-16T10:08:41.121Z - ℹ️ Không có tín hiệu rõ ràng trên LTC/USDT.
+2025-05-16T10:08:41.287Z - ℹ️ Không có tín hiệu rõ ràng trên OP/USDT.
+2025-05-16T10:08:56.292Z - 🕒 Vòng mới lúc 5/16/2025, 5:08:56 PM
+2025-05-16T10:08:56.448Z - 💰 Số dư: 28.73691264 USDT
+2025-05-16T10:08:56.612Z - [DEBUG] Tổng số symbol USDT Futures: 415
+2025-05-16T10:10:47.357Z - [DEBUG] Top 30 symbol theo volume: ["ETH/USDT:USDT","BTC/USDT:USDT","SOL/USDT:USDT","NXPC/USDT:USDT","XRP/USDT:USDT","DOGE/USDT:USDT","1000PEPE/USDT:USDT","SUI/USDT:USDT","MOODENG/USDT:USDT","ETHFI/USDT:USDT","TRUMP/USDT:USDT","ADA/USDT:USDT","WIF/USDT:USDT","FARTCOIN/USDT:USDT","BNB/USDT:USDT","NEIRO/USDT:USDT","ENA/USDT:USDT","KAITO/USDT:USDT","LINK/USDT:USDT","AVAX/USDT:USDT","AAVE/USDT:USDT","PEOPLE/USDT:USDT","PNUT/USDT:USDT","ONDO/USDT:USDT","LTC/USDT:USDT","BROCCOLIF3B/USDT:USDT","OP/USDT:USDT","SYRUP/USDT:USDT","JELLYJELLY/USDT:USDT","VIRTUAL/USDT:USDT"]
+2025-05-16T10:10:47.670Z - [DEBUG] Đã thêm symbol: ETH/USDT
+2025-05-16T10:10:48.147Z - [DEBUG] Đã thêm symbol: BTC/USDT
+2025-05-16T10:10:48.613Z - [DEBUG] Đã thêm symbol: SOL/USDT
+2025-05-16T10:10:49.080Z - ⚠️ Độ sâu order book không đủ cho NXPC/USDT:USDT: 5464.6828399999995
+2025-05-16T10:10:49.436Z - [DEBUG] Đã thêm symbol: XRP/USDT
+2025-05-16T10:10:49.905Z - [DEBUG] Đã thêm symbol: DOGE/USDT
+2025-05-16T10:10:50.374Z - ⚠️ Độ sâu order book không đủ cho 1000PEPE/USDT:USDT: 10189.7351679
+2025-05-16T10:10:50.747Z - [DEBUG] Đã thêm symbol: SUI/USDT
+2025-05-16T10:10:51.227Z - ⚠️ Độ sâu order book không đủ cho MOODENG/USDT:USDT: 72579.97019000001
+2025-05-16T10:10:51.628Z - ⚠️ Độ sâu order book không đủ cho ETHFI/USDT:USDT: 25145.42034
+2025-05-16T10:10:51.995Z - [DEBUG] Đã thêm symbol: TRUMP/USDT
+2025-05-16T10:10:52.464Z - [DEBUG] Đã thêm symbol: ADA/USDT
+2025-05-16T10:10:52.933Z - [DEBUG] Đã thêm symbol: WIF/USDT
+2025-05-16T10:10:53.393Z - [DEBUG] Đã thêm symbol: FARTCOIN/USDT
+2025-05-16T10:10:53.853Z - [DEBUG] Đã thêm symbol: BNB/USDT
+2025-05-16T10:10:54.339Z - [DEBUG] Đã thêm symbol: NEIRO/USDT
+2025-05-16T10:10:54.804Z - [DEBUG] Đã thêm symbol: ENA/USDT
+2025-05-16T10:10:55.278Z - ⚠️ Độ sâu order book không đủ cho KAITO/USDT:USDT: 33670.31344
+2025-05-16T10:10:55.674Z - [DEBUG] Đã thêm symbol: LINK/USDT
+2025-05-16T10:10:56.237Z - [DEBUG] Đã thêm symbol: AVAX/USDT
+2025-05-16T10:10:56.706Z - ⚠️ Độ sâu order book không đủ cho AAVE/USDT:USDT: 83499.577
+2025-05-16T10:10:57.106Z - [DEBUG] Đã thêm symbol: PEOPLE/USDT
+2025-05-16T10:10:57.670Z - ⚠️ Độ sâu order book không đủ cho PNUT/USDT:USDT: 18896.24521
+2025-05-16T10:10:58.020Z - [DEBUG] Đã thêm symbol: ONDO/USDT
+2025-05-16T10:10:58.497Z - [DEBUG] Đã thêm symbol: LTC/USDT
+2025-05-16T10:10:58.962Z - ⚠️ Độ sâu order book không đủ cho BROCCOLIF3B/USDT:USDT: 4889.637881
+2025-05-16T10:10:59.322Z - [DEBUG] Đã thêm symbol: OP/USDT
+2025-05-16T10:10:59.791Z - ⚠️ Độ sâu order book không đủ cho SYRUP/USDT:USDT: 7704.76778
+2025-05-16T10:11:00.145Z - ⚠️ Độ sâu order book không đủ cho JELLYJELLY/USDT:USDT: 41099.96858
+2025-05-16T10:11:00.589Z - ⚠️ Độ sâu order book không đủ cho VIRTUAL/USDT:USDT: 32472.22693
+2025-05-16T10:11:00.590Z - ✅ Đã chọn 19 cặp top volume: ["ETH/USDT","BTC/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","SUI/USDT","TRUMP/USDT","ADA/USDT","WIF/USDT","FARTCOIN/USDT","BNB/USDT","NEIRO/USDT","ENA/USDT","LINK/USDT","AVAX/USDT","PEOPLE/USDT","ONDO/USDT","LTC/USDT","OP/USDT"]
+2025-05-16T10:11:00.796Z - ℹ️ Không có tín hiệu rõ ràng trên ETH/USDT.
+2025-05-16T10:11:00.959Z - ℹ️ Không có tín hiệu rõ ràng trên BTC/USDT.
+2025-05-16T10:11:01.118Z - ℹ️ Không có tín hiệu rõ ràng trên SOL/USDT.
+2025-05-16T10:11:01.286Z - ℹ️ Không có tín hiệu rõ ràng trên XRP/USDT.
+2025-05-16T10:11:01.450Z - ℹ️ Không có tín hiệu rõ ràng trên DOGE/USDT.
+2025-05-16T10:11:01.612Z - ℹ️ Không có tín hiệu rõ ràng trên SUI/USDT.
+2025-05-16T10:11:01.771Z - ℹ️ Không có tín hiệu rõ ràng trên TRUMP/USDT.
+2025-05-16T10:11:01.928Z - ℹ️ Không có tín hiệu rõ ràng trên ADA/USDT.
+2025-05-16T10:11:02.090Z - ℹ️ Không có tín hiệu rõ ràng trên WIF/USDT.
+2025-05-16T10:11:02.242Z - ℹ️ Không có tín hiệu rõ ràng trên FARTCOIN/USDT.
+2025-05-16T10:11:02.411Z - ℹ️ Không có tín hiệu rõ ràng trên BNB/USDT.
+2025-05-16T10:11:02.641Z - ℹ️ Không có tín hiệu rõ ràng trên NEIRO/USDT.
+2025-05-16T10:11:02.804Z - ℹ️ Không có tín hiệu rõ ràng trên ENA/USDT.
+2025-05-16T10:11:02.960Z - ℹ️ Không có tín hiệu rõ ràng trên LINK/USDT.
+2025-05-16T10:11:03.115Z - ℹ️ Không có tín hiệu rõ ràng trên AVAX/USDT.
+2025-05-16T10:11:03.265Z - ℹ️ Không có tín hiệu rõ ràng trên PEOPLE/USDT.
+2025-05-16T10:11:03.428Z - ℹ️ Không có tín hiệu rõ ràng trên ONDO/USDT.
+2025-05-16T10:11:03.663Z - ℹ️ Không có tín hiệu rõ ràng trên LTC/USDT.
+2025-05-16T10:11:03.822Z - ℹ️ Không có tín hiệu rõ ràng trên OP/USDT.
+2025-07-04T14:19:14.016Z - 🚀 Khởi động bot giao dịch...
+2025-07-04T14:19:14.033Z - 📂 Đã tải vị thế từ positions.json
+2025-07-04T14:19:14.143Z - 🕒 Vòng mới lúc 7/4/2025, 9:19:14 PM
+2025-07-04T14:19:15.416Z - 💰 Số dư: 0 USDT
+2025-07-04T14:19:15.788Z - [DEBUG] Tổng số symbol USDT Futures: 444
+2025-07-04T14:38:55.007Z - 🚀 Khởi động bot giao dịch...
+2025-07-04T14:38:55.024Z - 📂 Đã tải vị thế từ positions.json
+2025-07-04T14:38:55.055Z - 🕒 Vòng mới lúc 7/4/2025, 9:38:55 PM
+2025-07-04T14:38:56.507Z - 💰 Số dư: 0 USDT
+2025-07-04T14:38:56.845Z - [DEBUG] Tổng số symbol USDT Futures: 444
+2025-07-04T14:40:53.103Z - [DEBUG] Top 30 symbol theo volume: ["BTC/USDT:USDT","ETH/USDT:USDT","SOL/USDT:USDT","H/USDT:USDT","XRP/USDT:USDT","1000PEPE/USDT:USDT","DOGE/USDT:USDT","FUN/USDT:USDT","SUI/USDT:USDT","PENGU/USDT:USDT","WIF/USDT:USDT","FARTCOIN/USDT:USDT","MOODENG/USDT:USDT","BR/USDT:USDT","ICNT/USDT:USDT","ADA/USDT:USDT","UNI/USDT:USDT","BCH/USDT:USDT","AAVE/USDT:USDT","LINK/USDT:USDT","LTC/USDT:USDT","HYPE/USDT:USDT","AVAX/USDT:USDT","SAHARA/USDT:USDT","ENA/USDT:USDT","NEIRO/USDT:USDT","GUN/USDT:USDT","BNB/USDT:USDT","TRUMP/USDT:USDT","SEI/USDT:USDT"]
+2025-07-04T14:40:53.410Z - [DEBUG] Đã thêm symbol: BTC/USDT
+2025-07-04T14:40:53.892Z - [DEBUG] Đã thêm symbol: ETH/USDT
+2025-07-04T14:40:54.345Z - [DEBUG] Đã thêm symbol: SOL/USDT
+2025-07-04T14:40:54.795Z - ⚠️ Độ sâu order book không đủ cho H/USDT:USDT: 44025.25946
+2025-07-04T14:40:55.151Z - [DEBUG] Đã thêm symbol: XRP/USDT
+2025-07-04T14:40:55.603Z - ⚠️ Độ sâu order book không đủ cho 1000PEPE/USDT:USDT: 59005.605142
+2025-07-04T14:40:55.971Z - [DEBUG] Đã thêm symbol: DOGE/USDT
+2025-07-04T14:40:56.421Z - ⚠️ Độ sâu order book không đủ cho FUN/USDT:USDT: 28216.128512999996
+2025-07-04T14:40:56.786Z - [DEBUG] Đã thêm symbol: SUI/USDT
+2025-07-04T14:40:57.240Z - ⚠️ Độ sâu order book không đủ cho PENGU/USDT:USDT: 60195.495108
+2025-07-04T14:40:57.590Z - [DEBUG] Đã thêm symbol: WIF/USDT
+2025-07-04T14:40:58.042Z - [DEBUG] Đã thêm symbol: FARTCOIN/USDT
+2025-07-04T14:40:58.507Z - ⚠️ Độ sâu order book không đủ cho MOODENG/USDT:USDT: 35237.71676
+2025-07-04T14:40:58.858Z - ⚠️ Độ sâu order book không đủ cho BR/USDT:USDT: 25345.28022
+2025-07-04T14:40:59.066Z - ⚠️ Không đủ dữ liệu OHLCV cho ICNT/USDT:USDT: 26 nến
+2025-07-04T14:40:59.370Z - [DEBUG] Đã thêm symbol: ADA/USDT
+2025-07-04T14:40:59.838Z - [DEBUG] Đã thêm symbol: UNI/USDT
+2025-07-04T14:41:00.289Z - ⚠️ Độ sâu order book không đủ cho BCH/USDT:USDT: 71915.33884000001
+2025-07-04T14:41:00.645Z - [DEBUG] Đã thêm symbol: AAVE/USDT
+2025-07-04T14:41:01.113Z - [DEBUG] Đã thêm symbol: LINK/USDT
+2025-07-04T14:41:01.572Z - [DEBUG] Đã thêm symbol: LTC/USDT
+2025-07-04T14:41:02.037Z - ⚠️ Độ sâu order book không đủ cho HYPE/USDT:USDT: 25992.649550000002
+2025-07-04T14:41:02.388Z - [DEBUG] Đã thêm symbol: AVAX/USDT
+2025-07-04T14:41:02.843Z - ⚠️ Độ sâu order book không đủ cho SAHARA/USDT:USDT: 72919.15391000001
+2025-07-04T14:41:03.207Z - [DEBUG] Đã thêm symbol: ENA/USDT
+2025-07-04T14:41:03.669Z - [DEBUG] Đã thêm symbol: NEIRO/USDT
+2025-07-04T14:41:04.126Z - [DEBUG] Đã thêm symbol: GUN/USDT
+2025-07-04T14:41:04.579Z - [DEBUG] Đã thêm symbol: BNB/USDT
+2025-07-04T14:41:05.048Z - [DEBUG] Đã thêm symbol: TRUMP/USDT
+2025-07-04T14:41:05.489Z - [DEBUG] Đã thêm symbol: SEI/USDT
+2025-07-04T14:41:05.490Z - ✅ Đã chọn 20 cặp top volume: ["BTC/USDT","ETH/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","SUI/USDT","WIF/USDT","FARTCOIN/USDT","ADA/USDT","UNI/USDT","AAVE/USDT","LINK/USDT","LTC/USDT","AVAX/USDT","ENA/USDT","NEIRO/USDT","GUN/USDT","BNB/USDT","TRUMP/USDT","SEI/USDT"]
+2025-07-04T14:41:05.701Z - ℹ️ Không có tín hiệu rõ ràng trên BTC/USDT.
+2025-07-04T14:41:05.857Z - ℹ️ Không có tín hiệu rõ ràng trên ETH/USDT.
+2025-07-04T14:41:06.006Z - ℹ️ Không có tín hiệu rõ ràng trên SOL/USDT.
+2025-07-04T14:41:06.165Z - ℹ️ Không có tín hiệu rõ ràng trên XRP/USDT.
+2025-07-04T14:41:06.311Z - ℹ️ Không có tín hiệu rõ ràng trên DOGE/USDT.
+2025-07-04T14:41:06.476Z - ℹ️ Không có tín hiệu rõ ràng trên SUI/USDT.
+2025-07-04T14:41:06.622Z - ℹ️ Không có tín hiệu rõ ràng trên WIF/USDT.
+2025-07-04T14:41:06.772Z - ℹ️ Không có tín hiệu rõ ràng trên FARTCOIN/USDT.
+2025-07-04T14:41:06.922Z - ℹ️ Không có tín hiệu rõ ràng trên ADA/USDT.
+2025-07-04T14:41:07.079Z - ℹ️ Không có tín hiệu rõ ràng trên UNI/USDT.
+2025-07-04T14:41:07.220Z - ℹ️ Không có tín hiệu rõ ràng trên AAVE/USDT.
+2025-07-04T14:41:07.373Z - ℹ️ Không có tín hiệu rõ ràng trên LINK/USDT.
+2025-07-04T14:41:07.526Z - ℹ️ Không có tín hiệu rõ ràng trên LTC/USDT.
+2025-07-04T14:41:07.682Z - ℹ️ Không có tín hiệu rõ ràng trên AVAX/USDT.
+2025-07-04T14:41:07.992Z - DEBUG: symbol=ENA/USDT, side=long, entryPrice=0.2566, quantity=38.971, leverage=5
+2025-07-04T14:41:07.993Z - 🚀 Mở vị thế LONG cho ENA/USDT với giá vào lệnh 0.2566, khối lượng 38.971, đòn bẩy 5x
+2025-07-04T14:41:08.149Z - DEBUG: orderSide=buy
+2025-07-04T14:41:08.319Z - ❌ Lỗi khi gọi createMarketOrder: binance {"code":-2019,"msg":"Margin is insufficient."}
+2025-07-04T14:41:08.619Z - ℹ️ Không có tín hiệu rõ ràng trên NEIRO/USDT.
+2025-07-04T14:41:08.782Z - ℹ️ Không có tín hiệu rõ ràng trên GUN/USDT.
+2025-07-04T14:41:08.921Z - ℹ️ Không có tín hiệu rõ ràng trên BNB/USDT.
+2025-07-04T14:41:09.068Z - ℹ️ Không có tín hiệu rõ ràng trên TRUMP/USDT.
+2025-07-04T14:41:09.224Z - ℹ️ Không có tín hiệu rõ ràng trên SEI/USDT.
+2025-07-04T14:41:24.238Z - 🕒 Vòng mới lúc 7/4/2025, 9:41:24 PM
+2025-07-04T14:41:24.391Z - 💰 Số dư: 0 USDT
+2025-07-04T14:41:24.539Z - [DEBUG] Tổng số symbol USDT Futures: 444
+2025-07-04T14:43:20.314Z - [DEBUG] Top 30 symbol theo volume: ["BTC/USDT:USDT","ETH/USDT:USDT","SOL/USDT:USDT","H/USDT:USDT","XRP/USDT:USDT","1000PEPE/USDT:USDT","DOGE/USDT:USDT","FUN/USDT:USDT","SUI/USDT:USDT","PENGU/USDT:USDT","WIF/USDT:USDT","FARTCOIN/USDT:USDT","MOODENG/USDT:USDT","BR/USDT:USDT","ICNT/USDT:USDT","ADA/USDT:USDT","UNI/USDT:USDT","BCH/USDT:USDT","AAVE/USDT:USDT","LINK/USDT:USDT","LTC/USDT:USDT","HYPE/USDT:USDT","AVAX/USDT:USDT","SAHARA/USDT:USDT","ENA/USDT:USDT","NEIRO/USDT:USDT","GUN/USDT:USDT","BNB/USDT:USDT","TRUMP/USDT:USDT","SEI/USDT:USDT"]
+2025-07-04T14:43:20.624Z - [DEBUG] Đã thêm symbol: BTC/USDT
+2025-07-04T14:43:21.088Z - [DEBUG] Đã thêm symbol: ETH/USDT
+2025-07-04T14:43:21.555Z - [DEBUG] Đã thêm symbol: SOL/USDT
+2025-07-04T14:43:22.011Z - ⚠️ Độ sâu order book không đủ cho H/USDT:USDT: 69487.4357
+2025-07-04T14:43:22.359Z - [DEBUG] Đã thêm symbol: XRP/USDT
+2025-07-04T14:43:22.823Z - ⚠️ Độ sâu order book không đủ cho 1000PEPE/USDT:USDT: 78375.1158961
+2025-07-04T14:43:23.175Z - [DEBUG] Đã thêm symbol: DOGE/USDT
+2025-07-04T14:43:23.643Z - ⚠️ Độ sâu order book không đủ cho FUN/USDT:USDT: 37152.658046000004
+2025-07-04T14:43:24.000Z - [DEBUG] Đã thêm symbol: SUI/USDT
+2025-07-04T14:43:24.453Z - ⚠️ Độ sâu order book không đủ cho PENGU/USDT:USDT: 51244.169958
+2025-07-04T14:43:24.804Z - [DEBUG] Đã thêm symbol: WIF/USDT
+2025-07-04T14:43:25.262Z - [DEBUG] Đã thêm symbol: FARTCOIN/USDT
+2025-07-04T14:43:25.722Z - ⚠️ Độ sâu order book không đủ cho MOODENG/USDT:USDT: 35137.521819999994
+2025-07-04T14:43:26.073Z - ⚠️ Độ sâu order book không đủ cho BR/USDT:USDT: 33493.12738
+2025-07-04T14:43:26.275Z - ⚠️ Không đủ dữ liệu OHLCV cho ICNT/USDT:USDT: 26 nến
+2025-07-04T14:43:26.593Z - [DEBUG] Đã thêm symbol: ADA/USDT
+2025-07-04T14:43:27.038Z - [DEBUG] Đã thêm symbol: UNI/USDT
+2025-07-04T14:43:27.503Z - ⚠️ Độ sâu order book không đủ cho BCH/USDT:USDT: 41898.89973999999
+2025-07-04T14:43:27.856Z - [DEBUG] Đã thêm symbol: AAVE/USDT
+2025-07-04T14:43:28.331Z - [DEBUG] Đã thêm symbol: LINK/USDT
+2025-07-04T14:43:28.789Z - [DEBUG] Đã thêm symbol: LTC/USDT
+2025-07-04T14:43:29.235Z - ⚠️ Độ sâu order book không đủ cho HYPE/USDT:USDT: 29645.31145
+2025-07-04T14:43:29.589Z - [DEBUG] Đã thêm symbol: AVAX/USDT
+2025-07-04T14:43:30.059Z - ⚠️ Độ sâu order book không đủ cho SAHARA/USDT:USDT: 64560.88226
+2025-07-04T14:43:30.405Z - [DEBUG] Đã thêm symbol: ENA/USDT
+2025-07-04T14:43:30.857Z - [DEBUG] Đã thêm symbol: NEIRO/USDT
+2025-07-04T14:43:31.309Z - ⚠️ Độ sâu order book không đủ cho GUN/USDT:USDT: 66513.20968
+2025-07-04T14:43:31.663Z - [DEBUG] Đã thêm symbol: BNB/USDT
+2025-07-04T14:43:32.127Z - [DEBUG] Đã thêm symbol: TRUMP/USDT
+2025-07-04T14:43:32.576Z - [DEBUG] Đã thêm symbol: SEI/USDT
+2025-07-04T14:43:32.679Z - ✅ Đã chọn 19 cặp top volume: ["BTC/USDT","ETH/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","SUI/USDT","WIF/USDT","FARTCOIN/USDT","ADA/USDT","UNI/USDT","AAVE/USDT","LINK/USDT","LTC/USDT","AVAX/USDT","ENA/USDT","NEIRO/USDT","BNB/USDT","TRUMP/USDT","SEI/USDT"]
+2025-07-04T14:43:32.895Z - ℹ️ Không có tín hiệu rõ ràng trên BTC/USDT.
+2025-07-04T14:43:33.051Z - ℹ️ Không có tín hiệu rõ ràng trên ETH/USDT.
+2025-07-04T14:43:33.196Z - ℹ️ Không có tín hiệu rõ ràng trên SOL/USDT.
+2025-07-04T14:43:33.358Z - ℹ️ Không có tín hiệu rõ ràng trên XRP/USDT.
+2025-07-04T14:43:33.513Z - ℹ️ Không có tín hiệu rõ ràng trên DOGE/USDT.
+2025-07-04T14:43:33.652Z - ℹ️ Không có tín hiệu rõ ràng trên SUI/USDT.
+2025-07-04T14:43:33.813Z - ℹ️ Không có tín hiệu rõ ràng trên WIF/USDT.
+2025-07-04T14:43:33.965Z - ℹ️ Không có tín hiệu rõ ràng trên FARTCOIN/USDT.
+2025-07-04T14:43:34.128Z - ℹ️ Không có tín hiệu rõ ràng trên ADA/USDT.
+2025-07-04T14:43:34.274Z - ℹ️ Không có tín hiệu rõ ràng trên UNI/USDT.
+2025-07-04T14:43:34.426Z - ℹ️ Không có tín hiệu rõ ràng trên AAVE/USDT.
+2025-07-04T14:43:34.582Z - ℹ️ Không có tín hiệu rõ ràng trên LINK/USDT.
+2025-07-04T14:43:34.725Z - ℹ️ Không có tín hiệu rõ ràng trên LTC/USDT.
+2025-07-04T14:43:34.889Z - ℹ️ Không có tín hiệu rõ ràng trên AVAX/USDT.
+2025-07-04T14:43:35.046Z - ℹ️ Không có tín hiệu rõ ràng trên ENA/USDT.
+2025-07-04T14:43:35.199Z - ℹ️ Không có tín hiệu rõ ràng trên NEIRO/USDT.
+2025-07-04T14:43:35.354Z - ℹ️ Không có tín hiệu rõ ràng trên BNB/USDT.
+2025-07-04T14:43:35.515Z - ℹ️ Không có tín hiệu rõ ràng trên TRUMP/USDT.
+2025-07-04T14:43:35.674Z - ℹ️ Không có tín hiệu rõ ràng trên SEI/USDT.
+2025-07-04T14:43:50.687Z - 🕒 Vòng mới lúc 7/4/2025, 9:43:50 PM
+2025-07-04T14:43:50.843Z - 💰 Số dư: 0 USDT
+2025-07-04T14:43:51.018Z - [DEBUG] Tổng số symbol USDT Futures: 444
+2025-07-04T14:45:45.523Z - [DEBUG] Top 30 symbol theo volume: ["BTC/USDT:USDT","ETH/USDT:USDT","SOL/USDT:USDT","H/USDT:USDT","XRP/USDT:USDT","1000PEPE/USDT:USDT","DOGE/USDT:USDT","FUN/USDT:USDT","SUI/USDT:USDT","PENGU/USDT:USDT","WIF/USDT:USDT","FARTCOIN/USDT:USDT","MOODENG/USDT:USDT","BR/USDT:USDT","ICNT/USDT:USDT","ADA/USDT:USDT","UNI/USDT:USDT","BCH/USDT:USDT","AAVE/USDT:USDT","LINK/USDT:USDT","LTC/USDT:USDT","HYPE/USDT:USDT","AVAX/USDT:USDT","SAHARA/USDT:USDT","ENA/USDT:USDT","NEIRO/USDT:USDT","GUN/USDT:USDT","BNB/USDT:USDT","TRUMP/USDT:USDT","SEI/USDT:USDT"]
+2025-07-04T14:45:45.844Z - [DEBUG] Đã thêm symbol: BTC/USDT
+2025-07-04T14:45:46.287Z - [DEBUG] Đã thêm symbol: ETH/USDT
+2025-07-04T14:45:46.741Z - [DEBUG] Đã thêm symbol: SOL/USDT
+2025-07-04T14:45:47.212Z - ⚠️ Độ sâu order book không đủ cho H/USDT:USDT: 58848.262059999994
+2025-07-04T14:45:47.560Z - [DEBUG] Đã thêm symbol: XRP/USDT
+2025-07-04T14:45:48.015Z - ⚠️ Độ sâu order book không đủ cho 1000PEPE/USDT:USDT: 42226.7941673
+2025-07-04T14:45:48.374Z - [DEBUG] Đã thêm symbol: DOGE/USDT
+2025-07-04T14:45:48.832Z - ⚠️ Độ sâu order book không đủ cho FUN/USDT:USDT: 21831.740671999996
+2025-07-04T14:45:49.196Z - [DEBUG] Đã thêm symbol: SUI/USDT
+2025-07-04T14:45:49.646Z - [DEBUG] Đã thêm symbol: PENGU/USDT
+2025-07-04T14:45:50.114Z - [DEBUG] Đã thêm symbol: WIF/USDT
+2025-07-04T14:45:50.571Z - [DEBUG] Đã thêm symbol: FARTCOIN/USDT
+2025-07-04T14:45:51.020Z - ⚠️ Độ sâu order book không đủ cho MOODENG/USDT:USDT: 48919.33531
+2025-07-04T14:45:51.366Z - ⚠️ Độ sâu order book không đủ cho BR/USDT:USDT: 39944.7535
+2025-07-04T14:45:51.565Z - ⚠️ Không đủ dữ liệu OHLCV cho ICNT/USDT:USDT: 26 nến
+2025-07-04T14:45:51.873Z - [DEBUG] Đã thêm symbol: ADA/USDT
+2025-07-04T14:45:52.328Z - [DEBUG] Đã thêm symbol: UNI/USDT
+2025-07-04T14:45:52.795Z - ⚠️ Độ sâu order book không đủ cho BCH/USDT:USDT: 53354.13225000001
+2025-07-04T14:45:53.150Z - [DEBUG] Đã thêm symbol: AAVE/USDT
+2025-07-04T14:45:53.607Z - [DEBUG] Đã thêm symbol: LINK/USDT
+2025-07-04T14:45:54.066Z - [DEBUG] Đã thêm symbol: LTC/USDT
+2025-07-04T14:45:54.517Z - ⚠️ Độ sâu order book không đủ cho HYPE/USDT:USDT: 27360.53884
+2025-07-04T14:45:54.886Z - [DEBUG] Đã thêm symbol: AVAX/USDT
+2025-07-04T14:45:55.353Z - ⚠️ Độ sâu order book không đủ cho SAHARA/USDT:USDT: 93398.50078
+2025-07-04T14:45:55.700Z - [DEBUG] Đã thêm symbol: ENA/USDT
+2025-07-04T14:45:56.159Z - [DEBUG] Đã thêm symbol: NEIRO/USDT
+2025-07-04T14:45:56.619Z - ⚠️ Độ sâu order book không đủ cho GUN/USDT:USDT: 79577.40189
+2025-07-04T14:45:56.967Z - [DEBUG] Đã thêm symbol: BNB/USDT
+2025-07-04T14:45:57.424Z - [DEBUG] Đã thêm symbol: TRUMP/USDT
+2025-07-04T14:45:57.880Z - [DEBUG] Đã thêm symbol: SEI/USDT
+2025-07-04T14:45:57.881Z - ✅ Đã chọn 20 cặp top volume: ["BTC/USDT","ETH/USDT","SOL/USDT","XRP/USDT","DOGE/USDT","SUI/USDT","PENGU/USDT","WIF/USDT","FARTCOIN/USDT","ADA/USDT","UNI/USDT","AAVE/USDT","LINK/USDT","LTC/USDT","AVAX/USDT","ENA/USDT","NEIRO/USDT","BNB/USDT","TRUMP/USDT","SEI/USDT"]
+2025-07-04T14:45:58.088Z - ℹ️ Không có tín hiệu rõ ràng trên BTC/USDT.
+2025-07-04T14:45:58.245Z - ℹ️ Không có tín hiệu rõ ràng trên ETH/USDT.
+2025-07-04T14:45:58.399Z - ℹ️ Không có tín hiệu rõ ràng trên SOL/USDT.
+2025-07-04T14:45:58.559Z - ℹ️ Không có tín hiệu rõ ràng trên XRP/USDT.
+2025-07-04T14:45:58.705Z - ℹ️ Không có tín hiệu rõ ràng trên DOGE/USDT.
+2025-07-04T14:45:58.861Z - ℹ️ Không có tín hiệu rõ ràng trên SUI/USDT.
+2025-07-04T14:45:59.019Z - ℹ️ Không có tín hiệu rõ ràng trên PENGU/USDT.
+2025-07-04T14:45:59.171Z - ℹ️ Không có tín hiệu rõ ràng trên WIF/USDT.
+2025-07-04T14:45:59.326Z - ℹ️ Không có tín hiệu rõ ràng trên FARTCOIN/USDT.
+2025-07-04T14:45:59.484Z - ℹ️ Không có tín hiệu rõ ràng trên ADA/USDT.
+2025-07-04T14:45:59.644Z - ℹ️ Không có tín hiệu rõ ràng trên UNI/USDT.
+2025-07-04T14:45:59.796Z - ℹ️ Không có tín hiệu rõ ràng trên AAVE/USDT.
+2025-07-04T14:45:59.947Z - ℹ️ Không có tín hiệu rõ ràng trên LINK/USDT.
+2025-07-04T14:46:00.101Z - ℹ️ Không có tín hiệu rõ ràng trên LTC/USDT.
+2025-07-04T14:46:00.256Z - ℹ️ Không có tín hiệu rõ ràng trên AVAX/USDT.
+2025-07-04T14:46:00.561Z - DEBUG: symbol=ENA/USDT, side=long, entryPrice=0.2559, quantity=39.077, leverage=5
+2025-07-04T14:46:00.561Z - 🚀 Mở vị thế LONG cho ENA/USDT với giá vào lệnh 0.2559, khối lượng 39.077, đòn bẩy 5x
+2025-07-04T14:46:00.710Z - DEBUG: orderSide=buy
+2025-07-04T14:46:00.866Z - ❌ Lỗi khi gọi createMarketOrder: binance {"code":-2019,"msg":"Margin is insufficient."}
+2025-07-04T14:46:01.170Z - ℹ️ Không có tín hiệu rõ ràng trên NEIRO/USDT.
+2025-07-04T14:46:01.329Z - ℹ️ Không có tín hiệu rõ ràng trên BNB/USDT.
+2025-07-04T14:46:01.479Z - ℹ️ Không có tín hiệu rõ ràng trên TRUMP/USDT.
+2025-07-04T14:46:01.638Z - ℹ️ Không có tín hiệu rõ ràng trên SEI/USDT.
+2025-07-04T14:46:16.641Z - 🕒 Vòng mới lúc 7/4/2025, 9:46:16 PM
+2025-07-04T14:46:16.788Z - 💰 Số dư: 0 USDT
+2025-07-04T14:46:16.941Z - [DEBUG] Tổng số symbol USDT Futures: 444
+2025-07-04T14:47:55.329Z - 🚀 Khởi động bot giao dịch...
+2025-07-04T14:47:55.331Z - 📂 Đã tải vị thế từ positions.json
+2025-07-04T14:47:55.353Z - 🕒 Vòng mới lúc 7/4/2025, 9:47:55 PM
+2025-07-04T14:47:56.598Z - 💰 Số dư: 0 USDT
+2025-07-04T14:47:56.954Z - [DEBUG] Tổng số symbol USDT Futures: 444
