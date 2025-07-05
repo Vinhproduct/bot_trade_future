@@ -16,7 +16,7 @@ const exchange = new ccxt.binance({
 // Cấu hình bot
 const maxPositions = 5;
 const tradeAmount = 10; // Mỗi lệnh $10
-const leverage = 5; // Đòn bẩy
+const leverage = 7; // Đòn bẩy
 const profitTarget = 2; // Mục tiêu lợi nhuận $2
 const lossLimit = 3; // Giới hạn lỗ $3
 const rsiPeriod = 14;
@@ -258,8 +258,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
-    if (latestRSI < 50) longScore += 1;
-    else shortScore += 1;
+    if (latestRSI < 50) longScore += 0.5;
+    else shortScore += 0.5;
   }
 
   // Đường trung bình
