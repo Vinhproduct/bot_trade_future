@@ -15,7 +15,7 @@ const exchange = new ccxt.binance({
 
 // Cấu hình bot
 const maxPositions = 5;
-const tradeAmount = 10; // Mỗi lệnh $10
+const tradeAmount = 15; // Mỗi lệnh $10
 const leverage = 7; // Đòn bẩy
 const profitTarget = 2; // Mục tiêu lợi nhuận $2
 const lossLimit = 3; // Giới hạn lỗ $3
