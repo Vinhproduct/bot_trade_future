@@ -26,12 +26,19 @@ const timeframe = '1h';
 const activePositions = new Map();
 const targetBalance = 1000; // Mục tiêu vốn $1000
 const symbolBlacklist = new Set(); // Danh sách đen cho symbol lỗi
-// cấu hình giờ địa phương:
+///////////////////////////////////
 const moment = require('moment-timezone');
-
+// 
+const symbolLocks = new Set();
+function normalizeSymbol(symbol) {
+  return symbol.replace(':USDT', '').trim();
+}
+// 
 const vietnamTime = moment().tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD HH:mm:ss");
 console.log("🕒 Giờ Việt Nam:", vietnamTime);
 
+
+//////////////////////////////////
 // Ghi log
 function logToFile(message) {
   const logMessage = `${new Date().toISOString()} - ${message}`;
@@ -258,8 +265,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
-    if (latestRSI < 50) longScore += 0.5;
-    else shortScore += 0.5;
+    if (latestRSI < 50) longScore += 1;
+    else shortScore += 1;
   }
 
   // Đường trung bình
@@ -556,7 +563,7 @@ async function runBot() {
           logToFile(`✅ Không còn vị thế mở. Dừng bot.`);
           break;
         }
-        await sleep(60000); // chờ lâu hơn nếu đã đạt mục tiêu
+        await sleep(60000);
         continue;
       }
 
@@ -568,9 +575,16 @@ async function runBot() {
 
       const symbols = await getTradingPairs();
 
-      for (const symbol of symbols) {
+      for (const symbolRaw of symbols) {
+        const symbol = normalizeSymbol(symbolRaw);
+
         if (symbolBlacklist.has(symbol)) {
           logToFile(`⚠️ Bỏ qua symbol trong danh sách đen: ${symbol}`);
+          continue;
+        }
+
+        if (symbolLocks.has(symbol)) {
+          logToFile(`🔒 ${symbol} đang được xử lý, bỏ qua.`);
           continue;
         }
 
@@ -579,32 +593,39 @@ async function runBot() {
           continue;
         }
 
+        symbolLocks.add(symbol);
+
         const indicators = await fetchIndicators(symbol);
         if (!indicators) {
+          symbolLocks.delete(symbol);
           continue;
         }
 
         const signal = analyze(indicators);
         if (!signal) {
           logToFile(`ℹ️ Không có tín hiệu rõ ràng trên ${symbol}.`);
+          symbolLocks.delete(symbol);
           continue;
         }
 
-        // Tính quantity dựa trên tradeAmount, giá hiện tại và đòn bẩy
         const ticker = await withRetry(() => exchange.fetchTicker(symbol));
         const price = ticker.last;
 
-        // Quantity theo công thức: quantity = tradeAmount / price
-        // Có thể điều chỉnh tuỳ contractSize
         const market = exchange.market(symbol);
         const contractSize = market.contractSize || 1;
         let quantity = tradeAmount / price / contractSize;
-
-        // Lấy số lượng hợp đồng làm tròn xuống cho hợp lệ (tùy từng coin)
-        quantity = Math.floor(quantity * 1000) / 1000; // ví dụ 3 chữ số thập phân
+        quantity = Math.floor(quantity * 1000) / 1000;
 
         if (quantity <= 0) {
           logToFile(`⚠️ Quantity tính được không hợp lệ cho ${symbol}: ${quantity}`);
+          symbolLocks.delete(symbol);
+          continue;
+        }
+
+        // Kiểm tra lần nữa đề phòng race condition
+        if (activePositions.has(symbol)) {
+          logToFile(`⚠️ Phát hiện ${symbol} đã có vị thế ngay trước khi mở. Bỏ qua.`);
+          symbolLocks.delete(symbol);
           continue;
         }
 
@@ -617,12 +638,17 @@ async function runBot() {
             openedAt: new Date().toISOString(),
           });
           savePositions();
-          await sleep(2000); // tránh call liên tục
+          logToFile(`✅ Đã ghi nhận vị thế mới trên ${symbol}`);
+          await sleep(2000);
           if (activePositions.size >= maxPositions) break;
+        } else {
+          logToFile(`❌ Mở lệnh thất bại cho ${symbol}, xóa khỏi khoá.`);
         }
+
+        symbolLocks.delete(symbol);
       }
 
-      await sleep(15000); // đợi vòng sau
+      await sleep(15000);
 
     } catch (e) {
       logToFile(`❌ Lỗi ở vòng main: ${e.message}`);
@@ -630,6 +656,7 @@ async function runBot() {
     }
   }
 }
+
 
 // Kiểm tra API key
 if (!process.env.API_KEY || !process.env.API_SECRET) {
