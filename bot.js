@@ -15,7 +15,7 @@ const exchange = new ccxt.binance({
 
 // Cấu hình bot
 const maxPositions = 5;
-const tradeAmount = 12; // Mỗi lệnh $10
+const tradeAmount = 10; // Mỗi lệnh $10
 const leverage = 5; // Đòn bẩy
 const profitTarget = 2; // Mục tiêu lợi nhuận $2
 const lossLimit = 3; // Giới hạn lỗ $3
@@ -471,91 +471,68 @@ async function checkPositions() {
     }
 
 
-for (const [symbol, position] of activePositions.entries()) {
-  if (!openSymbols.has(symbol)) {
-    const lastPrice = await withRetry(() => exchange.fetchTicker(symbol)).then(t => t.last);
-    const amount = position.amount || 0; // Thêm kiểm tra để tránh undefined
-    if (amount <= 0) {
-      logToFile(`❌ Khối lượng không hợp lệ cho ${symbol}: ${amount}`);
-      activePositions.delete(symbol);
-      savePositions();
-      continue;
+    for (const [symbol, position] of activePositions.entries()) {
+      if (!openSymbols.has(symbol)) {
+        logToFile(`🟥 Vị thế ${symbol} đã đóng (không còn trong danh sách API trả về). Xóa khỏi activePositions.`);
+        activePositions.delete(symbol);
+        savePositions();
+      }
+
+      const market = exchange.market(symbol);
+      const ticker = await withRetry(() => exchange.fetchTicker(symbol));
+      const currentPrice = ticker.last;
+      const side = position.side;
+      const entry = position.entry;
+      const amount = position.amount;
+      const contractSize = market.contractSize || 1;
+
+      const hasOrders = await checkOpenOrders(symbol, position.openedAt);
+
+      if (!hasOrders) {
+        logToFile(`⚠️ Đóng vị thế ${symbol} vì thiếu lệnh TP/SL`);
+        const opposite = side === 'buy' ? 'sell' : 'buy';
+        await withRetry(() => exchange.createMarketOrder(symbol, opposite, amount, { reduceOnly: true }));
+        activePositions.delete(symbol);
+        savePositions();
+        continue;
+      }
+
+      const feeRate = 0.0004; // Phí taker 0.04%
+      const entryFee = amount * entry * contractSize * feeRate;
+      const exitFee = amount * currentPrice * contractSize * feeRate;
+      const margin = (amount * entry * contractSize) / leverage;
+      const pnl = side === 'buy'
+        ? (currentPrice - entry) * amount * contractSize - (entryFee + exitFee)
+        : (entry - currentPrice) * amount * contractSize - (entryFee + exitFee);
+      const roi = (pnl / margin) * 100;
+
+      const isTakeProfit = pnl >= profitTarget;
+      const isStopLoss = pnl <= -lossLimit;
+
+      if (isTakeProfit || isStopLoss) {
+        const reason = isTakeProfit ? 'Take Profit (thủ công)' : 'Stop Loss (thủ công)';
+        const opposite = side === 'buy' ? 'sell' : 'buy';
+
+        try {
+          await withRetry(() => exchange.cancelAllOrders(symbol));
+          logToFile(`🗑️ Đã hủy lệnh TP/SL cho ${symbol}`);
+
+          await withRetry(() =>
+            exchange.createMarketOrder(symbol, opposite, position.amount, {
+              reduceOnly: true,
+            })
+          );
+          logToFile(`🛑 Đã đóng ${symbol} do ${reason} tại ${currentPrice} (ROI: ${roi.toFixed(2)}%)`);
+          activePositions.delete(symbol);
+          savePositions();
+          await sleep(500);
+        } catch (e) {
+          logToFile(`❌ Lỗi đóng vị thế ${symbol}: ${e.message}`);
+        }
+      } else {
+        logToFile(`📊 ${symbol} ROI: ${roi.toFixed(2)}% - Đang giữ.`);
+      }
     }
-    const estimatedPnl = position.side === 'long' // Sửa 'buy' thành 'long' cho đồng nhất
-      ? (lastPrice - position.entry) * amount * (exchange.market(symbol).contractSize || 1)
-      : (position.entry - lastPrice) * amount * (exchange.market(symbol).contractSize || 1);
-    logToFile(`🟥 Vị thế trên ${symbol} đã đóng (có thể do TP/SL) tại ${lastPrice}, PnL ước tính: ${estimatedPnl.toFixed(2)} USDT`);
-    activePositions.delete(symbol);
-    savePositions();
-    continue;
-  }
-
-  const market = exchange.market(symbol);
-  const ticker = await withRetry(() => exchange.fetchTicker(symbol));
-  const currentPrice = ticker.last;
-  const side = position.side;
-  const entry = position.entry;
-  const amount = position.amount; // amount đã được lưu từ API trong activePositions
-  const contractSize = market.contractSize || 1;
-
-  if (isNaN(amount) || amount <= 0) { // Thêm kiểm tra amount hợp lệ
-    logToFile(`❌ Khối lượng không hợp lệ cho ${symbol}: ${amount}`);
-    activePositions.delete(symbol);
-    savePositions();
-    continue;
-  }
-
-  const hasOrders = await checkOpenOrders(symbol, position.openedAt); // Thêm position.openedAt
-  if (!hasOrders) {
-    logToFile(`⚠️ Đóng vị thế ${symbol} vì thiếu lệnh TP/SL`);
-    const opposite = side === 'long' ? 'sell' : 'buy'; // Sửa 'buy' thành 'long' cho đồng nhất
-    try {
-      await withRetry(() => exchange.createMarketOrder(symbol, opposite, amount, { reduceOnly: true }));
-      logToFile(`🛑 Đã đóng vị thế ${symbol} vì thiếu TP/SL tại ${currentPrice}`);
-    } catch (e) {
-      logToFile(`❌ Lỗi đóng vị thế ${symbol}: ${e.message}`);
-    }
-    activePositions.delete(symbol);
-    savePositions();
-    continue;
-  }
-
-  const feeRate = 0.0004; // Phí taker 0.04%
-  const entryFee = amount * entry * contractSize * feeRate;
-  const exitFee = amount * currentPrice * contractSize * feeRate;
-  const margin = (amount * entry * contractSize) / leverage;
-  const pnl = side === 'long' // Sửa 'buy' thành 'long' cho đồng nhất
-    ? (currentPrice - entry) * amount * contractSize - (entryFee + exitFee)
-    : (entry - currentPrice) * amount * contractSize - (entryFee + exitFee);
-  const roi = (pnl / margin) * 100;
-
-  const isTakeProfit = pnl >= profitTarget;
-  const isStopLoss = pnl <= -lossLimit;
-
-  if (isTakeProfit || isStopLoss) {
-    const reason = isTakeProfit ? 'Take Profit (thủ công)' : 'Stop Loss (thủ công)';
-    const opposite = side === 'long' ? 'sell' : 'buy'; // Sửa 'buy' thành 'long'
-
-    try {
-      await withRetry(() => exchange.cancelAllOrders(symbol));
-      logToFile(`🗑️ Đã hủy lệnh TP/SL cho ${symbol}`);
-
-      await withRetry(() =>
-        exchange.createMarketOrder(symbol, opposite, amount, { // Sử dụng amount đã kiểm tra
-          reduceOnly: true,
-        })
-      );
-      logToFile(`🛑 Đã đóng ${symbol} do ${reason} tại ${currentPrice} (ROI: ${roi.toFixed(2)}%)`);
-      activePositions.delete(symbol);
-      savePositions();
-      await sleep(500);
-    } catch (e) {
-      logToFile(`❌ Lỗi đóng vị thế ${symbol}: ${e.message}`);
-    }
-  } else {
-    logToFile(`📊 ${symbol} ROI: ${roi.toFixed(2)}% - Đang giữ.`);
-  }
-}
   } catch (e) {
     logToFile(`❌ Lỗi kiểm tra vị thế: ${e.message}, Chi tiết: ${JSON.stringify(e)}`);
   }
@@ -574,16 +551,6 @@ async function runBot() {
       const balance = balanceInfo.total.USDT || 0;
       logToFile(`💰 Số dư: ${balance} USDT`);
 
-      // Kiểm tra và làm sạch activePositions trước khi kiểm tra maxPositions
-      for (const [symbol, position] of activePositions.entries()) {
-        if (!position.amount || position.amount <= 0 || isNaN(position.amount)) {
-          logToFile(`❌ Xóa vị thế không hợp lệ ${symbol}: amount = ${position.amount}`);
-          activePositions.delete(symbol);
-          savePositions();
-        }
-      }
-      logToFile(`[DEBUG] Số vị thế hiện tại: ${activePositions.size}/${maxPositions}, Symbols: ${JSON.stringify([...activePositions.keys()])}`);
-
       await checkPositions();
 
       if (balance >= targetBalance) {
@@ -597,21 +564,15 @@ async function runBot() {
       }
 
       if (activePositions.size >= maxPositions) {
-        logToFile(`⚠️ Đạt số lượng vị thế tối đa (${maxPositions}). Chỉ theo dõi vị thế hiện tại. Symbols: ${JSON.stringify([...activePositions.keys()])}`);
+        logToFile(`⚠️ Đạt số lượng vị thế tối đa (${maxPositions}). Chỉ theo dõi vị thế hiện tại.`);
         await sleep(30000);
         continue;
       }
 
       const symbols = await getTradingPairs();
-      if (symbols.length === 0) {
-        logToFile(`⚠️ Không có symbol hợp lệ để giao dịch`);
-        await sleep(15000);
-        continue;
-      }
 
       for (const symbolRaw of symbols) {
         const symbol = normalizeSymbol(symbolRaw);
-        logToFile(`[DEBUG] Đang xử lý symbol: ${symbol}`);
 
         if (symbolBlacklist.has(symbol)) {
           logToFile(`⚠️ Bỏ qua symbol trong danh sách đen: ${symbol}`);
@@ -628,17 +589,10 @@ async function runBot() {
           continue;
         }
 
-        // Kiểm tra lại maxPositions trước khi mở vị thế mới
-        if (activePositions.size >= maxPositions) {
-          logToFile(`⚠️ Đạt số lượng vị thế tối đa (${maxPositions}) trong vòng lặp. Thoát.`);
-          break;
-        }
-
         symbolLocks.add(symbol);
 
         const indicators = await fetchIndicators(symbol);
         if (!indicators) {
-          logToFile(`⚠️ Không lấy được chỉ báo cho ${symbol}`);
           symbolLocks.delete(symbol);
           continue;
         }
@@ -672,23 +626,20 @@ async function runBot() {
         }
 
         const opened = await openPosition(symbol, signal.toLowerCase(), price, quantity, leverage);
+        
         if (opened) {
           activePositions.set(symbol, {
-            side: signal.toLowerCase(),
-            entry: price,
-            amount: quantity, // Đảm bảo lưu quantity
+            side: parseFloat(pos.info.positionAmt) > 0 ? 'long' : 'short',
+            entry: parseFloat(pos.info.entryPrice),
+            amount: Math.abs(parseFloat(pos.info.positionAmt)),
             openedAt: new Date().toISOString(),
           });
           savePositions();
-          logToFile(`✅ Đã ghi nhận vị thế mới trên ${symbol}, amount: ${quantity}`);
+          logToFile(`✅ Đã ghi nhận vị thế mới trên ${symbol}`);
           await sleep(2000);
-          logToFile(`[DEBUG] Số vị thế hiện tại: ${activePositions.size}/${maxPositions}`);
-          if (activePositions.size >= maxPositions) {
-            logToFile(`⚠️ Đạt số lượng vị thế tối đa (${maxPositions}) sau khi mở ${symbol}. Thoát vòng lặp.`);
-            break;
-          }
+          if (activePositions.size >= maxPositions) break;
         } else {
-          logToFile(`❌ Mở lệnh thất bại cho ${symbol}, xóa khỏi khóa.`);
+          logToFile(`❌ Mở lệnh thất bại cho ${symbol}, xóa khỏi khoá.`);
         }
 
         symbolLocks.delete(symbol);
@@ -697,7 +648,7 @@ async function runBot() {
       await sleep(15000);
 
     } catch (e) {
-      logToFile(`❌ Lỗi ở vòng main: ${e.message}, Chi tiết: ${JSON.stringify(e)}`);
+      logToFile(`❌ Lỗi ở vòng main: ${e.message}`);
       await sleep(10000);
     }
   }
