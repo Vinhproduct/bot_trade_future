@@ -509,6 +509,17 @@ async function checkPositions() {
 
 
 // Vòng lặp chính
+// Kiểm tra API key
+if (!process.env.API_KEY || !process.env.API_SECRET) {
+  logToFile('❌ Thiếu API_KEY hoặc API_SECRET trong file .env');
+  process.exit(1);
+}
+
+// ✅ Hàm normalizeSymbol: chuyển BTC/USDT hoặc BTC/USDT:USDT → BTCUSDT
+function normalizeSymbol(symbol) {
+  return symbol.split(':')[0].replace('/', '');
+}
+
 async function runBot() {
   logToFile('🚀 Khởi động bot giao dịch...');
   loadPositions();
@@ -628,6 +639,8 @@ async function runBot() {
     }
   }
 }
+
+runBot();
 
 // Kiểm tra API key
 if (!process.env.API_KEY || !process.env.API_SECRET) {
