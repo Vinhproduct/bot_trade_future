@@ -12,7 +12,7 @@ const exchange = new ccxt.binance({
   options: { defaultType: 'future' },
   // urls: { api: { fapi: 'https://testnet.binance.vision/fapi' } }, // Bật dòng này để dùng Testnet
 });
-
+const symbolLocks = new Set();
 // Cấu hình bot
 const maxPositions = 5;
 const tradeAmount = 10; // Mỗi lệnh $10
@@ -519,7 +519,7 @@ if (!process.env.API_KEY || !process.env.API_SECRET) {
 function normalizeSymbol(symbol) {
   return symbol.split(':')[0].replace('/', '');
 }
-const symbolLocks = new Set();
+
 async function runBot() {
   logToFile('🚀 Khởi động bot giao dịch...');
   loadPositions();
