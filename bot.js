@@ -519,7 +519,7 @@ if (!process.env.API_KEY || !process.env.API_SECRET) {
 function normalizeSymbol(symbol) {
   return symbol.split(':')[0].replace('/', '');
 }
-
+const symbolLocks = new Set();
 async function runBot() {
   logToFile('🚀 Khởi động bot giao dịch...');
   loadPositions();
