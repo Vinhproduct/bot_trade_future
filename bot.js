@@ -22,7 +22,7 @@ const lossLimit = 3; // Giới hạn lỗ $3
 const rsiPeriod = 14;
 const smaPeriod = 50;
 const emaPeriod = 20;
-const timeframe = '1h';
+const timeframe = '15m';
 const activePositions = new Map();
 const targetBalance = 1000; // Mục tiêu vốn $1000
 const symbolBlacklist = new Set(); // Danh sách đen cho symbol lỗi
@@ -171,8 +171,8 @@ async function fetchIndicators(symbol) {
       return null;
     }
 
-    const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 50));
-    if (!ohlcv || ohlcv.length < 50) {
+    const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 210));
+    if (!ohlcv || ohlcv.length < 210) {
       logToFile(`❌ Không đủ dữ liệu cho ${symbol}: ${ohlcv?.length || 0} nến`);
       symbolBlacklist.add(symbol);
       return null;
