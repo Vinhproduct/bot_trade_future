@@ -114,8 +114,8 @@ async function getTradingPairs() {
     const filtered = [];
     for (const { symbol } of sortedTop) {
       try {
-        const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 50));
-        if (!ohlcv || ohlcv.length < 50) {
+        const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 210));
+        if (!ohlcv || ohlcv.length < 210) {
           logToFile(`⚠️ Không đủ dữ liệu OHLCV cho ${symbol}: ${ohlcv?.length || 0} nến`);
           continue;
         }
@@ -171,8 +171,8 @@ async function fetchIndicators(symbol) {
       return null;
     }
 
-    const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 210));
-    if (!ohlcv || ohlcv.length < 210) {
+    const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 50));
+    if (!ohlcv || ohlcv.length < 50) {
       logToFile(`❌ Không đủ dữ liệu cho ${symbol}: ${ohlcv?.length || 0} nến`);
       symbolBlacklist.add(symbol);
       return null;
@@ -222,8 +222,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
   const latestMACDHist = macd.at(-1)?.histogram;
   const previousMACDHist = macd.at(-2)?.histogram;
   const latestSMA = sma.at(-1);
-  const latestEMA = ema.at(-1);
-  // const ema200 = ema.at(-1); // bạn cần truyền EMA200 vào đây nếu có
+  const latestEMA = ema.at(-1); // EMA ngắn hạn (ví dụ EMA20)
+  const latestEMA200 = ema200.at(-1); // EMA200 thật sự
 
   const currentVolume = volumes.at(-1);
 
@@ -272,15 +272,16 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
   if (isBullishEngulfing) longScore += 0.5;
   if (isBearishEngulfing) shortScore += 0.5;
 
-  // Lọc xu hướng chính bằng EMA200 (cần truyền vào đúng)
-  const isUptrend = latestClose > ema200;
-  const isDowntrend = latestClose < ema200;
+  // Lọc xu hướng chính bằng EMA200
+  const isUptrend = latestClose > latestEMA200;
+  const isDowntrend = latestClose < latestEMA200;
 
   if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
   if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
 
   return null;
 }
+
 
 // Mở vị thế
 function roundQuantityUp(quantity, stepSize) {
