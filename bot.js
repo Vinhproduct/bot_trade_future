@@ -114,8 +114,8 @@ async function getTradingPairs() {
     const filtered = [];
     for (const { symbol } of sortedTop) {
       try {
-        const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 210));
-        if (!ohlcv || ohlcv.length < 210) {
+        const ohlcv = await withRetry(() => exchange.fetchOHLCV(symbol, timeframe, undefined, 50));
+        if (!ohlcv || ohlcv.length < 50) {
           logToFile(`⚠️ Không đủ dữ liệu OHLCV cho ${symbol}: ${ohlcv?.length || 0} nến`);
           continue;
         }
@@ -185,7 +185,7 @@ async function fetchIndicators(symbol) {
     const macd = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
     const sma = SMA.calculate({ values: closes, period: smaPeriod });
     const ema = EMA.calculate({ values: closes, period: emaPeriod });
-    const ema200 = EMA.calculate({ values: closes, period: 200 });
+    const ema50 = EMA.calculate({ values: closes, period: 200 });
 
     if (rsi.length < 2 || macd.length < 2 || sma.length < 1 || ema.length < 1) {
       logToFile(`❌ Dữ liệu chỉ báo không đủ cho ${symbol}`);
@@ -199,7 +199,7 @@ async function fetchIndicators(symbol) {
       macd,
       sma,
       ema,
-      ema200,
+      ema50,
       volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20,
     };
 
@@ -212,7 +212,7 @@ async function fetchIndicators(symbol) {
 }
 
 // Phân tích tín hiệu
-function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
+function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema50 }) {
   const latestClose = closes.at(-1);
   const previousClose = closes.at(-2);
   const latestOpen = closes.at(-2); // giả định close trước là open hiện tại
@@ -223,13 +223,13 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
   const previousMACDHist = macd.at(-2)?.histogram;
   const latestSMA = sma.at(-1);
   const latestEMA = ema.at(-1); // EMA ngắn hạn (ví dụ EMA20)
-  const latestEMA200 = ema200.at(-1); // EMA200 thật sự
+  const latestEMA50 = ema50.at(-1); // EMA50 thật sự
 
   const currentVolume = volumes.at(-1);
 
   // Lọc nến yếu và volume thấp
   const isDoji = Math.abs(latestClose - previousClose) < (latestClose * 0.001);
-  const isLowVolume = currentVolume < volumeAvg * 0.7;
+  const isLowVolume = currentVolume < volumeAvg * 0.5;
   if (isDoji || isLowVolume) return null;
 
   // Tính lực nến
@@ -272,9 +272,9 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
   if (isBullishEngulfing) longScore += 0.5;
   if (isBearishEngulfing) shortScore += 0.5;
 
-  // Lọc xu hướng chính bằng EMA200
-  const isUptrend = latestClose > latestEMA200;
-  const isDowntrend = latestClose < latestEMA200;
+  // Lọc xu hướng chính bằng EMA50
+  const isUptrend = latestClose > latestEMA50;
+  const isDowntrend = latestClose < latestEMA50;
 
   if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
   if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
