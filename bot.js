@@ -223,7 +223,7 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema200 }) {
   const previousMACDHist = macd.at(-2)?.histogram;
   const latestSMA = sma.at(-1);
   const latestEMA = ema.at(-1);
-  //const ema200 = ema.at(-1); // bạn cần truyền EMA200 vào đây nếu có
+  const ema200 = ema.at(-1); // bạn cần truyền EMA200 vào đây nếu có
 
   const currentVolume = volumes.at(-1);
 
