@@ -185,7 +185,7 @@ async function fetchIndicators(symbol) {
     const macd = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
     const sma = SMA.calculate({ values: closes, period: smaPeriod });
     const ema = EMA.calculate({ values: closes, period: emaPeriod });
-    const ema50 = EMA.calculate({ values: closes, period: 200 });
+    const ema20 = EMA.calculate({ values: closes, period: 200 });
 
     if (rsi.length < 2 || macd.length < 2 || sma.length < 1 || ema.length < 1) {
       logToFile(`❌ Dữ liệu chỉ báo không đủ cho ${symbol}`);
@@ -199,7 +199,7 @@ async function fetchIndicators(symbol) {
       macd,
       sma,
       ema,
-      ema50,
+      ema20,
       volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20,
     };
 
@@ -212,7 +212,7 @@ async function fetchIndicators(symbol) {
 }
 
 // Phân tích tín hiệu
-function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema50 }) {
+function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   const latestClose = closes.at(-1);
   const previousClose = closes.at(-2);
   const latestOpen = closes.at(-2); // giả định close trước là open hiện tại
@@ -223,7 +223,7 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema50 }) {
   const previousMACDHist = macd.at(-2)?.histogram;
   const latestSMA = sma.at(-1);
   const latestEMA = ema.at(-1); // EMA ngắn hạn (ví dụ EMA20)
-  const latestEMA50 = ema50.at(-1); // EMA50 thật sự
+  const latestEMA20 = ema20.at(-1); // EMA20 thật sự
 
   const currentVolume = volumes.at(-1);
 
@@ -257,8 +257,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema50 }) {
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
-    if (latestRSI < 50) longScore += 1;
-    else shortScore += 1;
+    if (latestRSI < 50) longScore += 0.5;
+    else shortScore += 0.5;
   }
 
   // Đường trung bình
@@ -272,9 +272,9 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema50 }) {
   if (isBullishEngulfing) longScore += 0.5;
   if (isBearishEngulfing) shortScore += 0.5;
 
-  // Lọc xu hướng chính bằng EMA50
-  const isUptrend = latestClose > latestEMA50;
-  const isDowntrend = latestClose < latestEMA50;
+  // Lọc xu hướng chính bằng EMA20
+  const isUptrend = latestClose > latestEMA20;
+  const isDowntrend = latestClose < latestEMA20;
 
   if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
   if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
@@ -332,7 +332,11 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
 
     logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} với giá vào lệnh ${entryPrice}, khối lượng ${adjustedQuantity}, đòn bẩy ${leverage}x`);
 
-    await exchange.setLeverage(leverage, symbol);
+    // await exchange.setLeverage(leverage, symbol);
+    await exchange.fapiPrivate_post_leverage({
+      symbol: symbol.replace('/', ''),
+      leverage
+    });
 
     const orderSide = side.toLowerCase() === 'long' ? 'buy' : 'sell';
     logToFile(`DEBUG: orderSide=${orderSide}`);
@@ -554,8 +558,8 @@ async function runBot() {
       const symbols = await getTradingPairs();
 
       for (const symbolRaw of symbols) {
-        const symbol = normalizeSymbol(symbolRaw);
-
+        //const symbol = normalizeSymbol(symbolRaw);
+        const symbol = symbolRaw;
         if (symbolBlacklist.has(symbol)) {
           logToFile(`⚠️ Bỏ qua symbol trong danh sách đen: ${symbol}`);
           continue;
@@ -641,7 +645,7 @@ async function runBot() {
   }
 }
 
-runBot();
+// runBot();
 
 // Kiểm tra API key
 if (!process.env.API_KEY || !process.env.API_SECRET) {
