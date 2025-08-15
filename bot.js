@@ -521,8 +521,11 @@ if (!process.env.API_KEY || !process.env.API_SECRET) {
 }
 
 // ✅ Hàm normalizeSymbol: chuyển BTC/USDT hoặc BTC/USDT:USDT → BTCUSDT
+// function normalizeSymbol(symbol) {
+//   return symbol.split(':')[0].replace('/', '');
+// }
 function normalizeSymbol(symbol) {
-  return symbol.split(':')[0].replace('/', '');
+  return symbol.split(':')[0]; // "BTC/USDT:USDT" -> "BTC/USDT"
 }
 
 async function runBot() {
@@ -558,8 +561,8 @@ async function runBot() {
       const symbols = await getTradingPairs();
 
       for (const symbolRaw of symbols) {
-        //const symbol = normalizeSymbol(symbolRaw);
-        const symbol = symbolRaw;
+        const symbol = normalizeSymbol(symbolRaw);
+        // const symbol = symbolRaw;
         if (symbolBlacklist.has(symbol)) {
           logToFile(`⚠️ Bỏ qua symbol trong danh sách đen: ${symbol}`);
           continue;
