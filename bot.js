@@ -12,13 +12,15 @@ const exchange = new ccxt.binance({
   options: { defaultType: 'future' },
   // urls: { api: { fapi: 'https://testnet.binance.vision/fapi' } }, // Bật dòng này để dùng Testnet
 });
+
 const symbolLocks = new Set();
+
 // Cấu hình bot
 const maxPositions = 5;
 const tradeAmount = 10; // Mỗi lệnh $10
 const leverage = 5; // Đòn bẩy
-const profitTarget = 2; // Mục tiêu lợi nhuận $2
-const lossLimit = 3; // Giới hạn lỗ $3
+const profitTarget = 2; // Mục tiêu lợi nhuận $2 (PnL thực)
+const lossLimit = 3; // Giới hạn lỗ $3 (PnL thực)
 const rsiPeriod = 14;
 const smaPeriod = 50;
 const emaPeriod = 20;
@@ -26,6 +28,7 @@ const timeframe = '15m';
 const activePositions = new Map();
 const targetBalance = 1000; // Mục tiêu vốn $1000
 const symbolBlacklist = new Set(); // Danh sách đen cho symbol lỗi
+
 // cấu hình giờ địa phương:
 const moment = require('moment-timezone');
 const now = moment().tz("Asia/Ho_Chi_Minh");
@@ -88,7 +91,6 @@ async function getTradingPairs() {
       markets[symbol].info.contractType === 'PERPETUAL' &&
       markets[symbol].active
     );
-
 
     logToFile(`[DEBUG] Tổng số symbol USDT Futures: ${allSymbols.length}`);
 
@@ -185,7 +187,7 @@ async function fetchIndicators(symbol) {
     const macd = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
     const sma = SMA.calculate({ values: closes, period: smaPeriod });
     const ema = EMA.calculate({ values: closes, period: emaPeriod });
-    const ema20 = EMA.calculate({ values: closes, period: 200 });
+    const ema20 = EMA.calculate({ values: closes, period: 20 }); // CHANGED: đúng EMA20
 
     if (rsi.length < 2 || macd.length < 2 || sma.length < 1 || ema.length < 1) {
       logToFile(`❌ Dữ liệu chỉ báo không đủ cho ${symbol}`);
@@ -202,7 +204,6 @@ async function fetchIndicators(symbol) {
       ema20,
       volumeAvg: volumes.slice(-20).reduce((sum, v) => sum + v, 0) / 20,
     };
-
 
   } catch (e) {
     logToFile(`❌ Lỗi lấy chỉ báo cho ${symbol}: ${e.message}, Chi tiết: ${JSON.stringify(e)}`);
@@ -251,9 +252,9 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   if (latestMACDHist > 0 && previousMACDHist <= 0) longScore += 0.5;
   if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 0.5;
 
-  // RSI cực trị
-  if (latestRSI < 30 && previousRSI < 30) longScore += 0.5;
-  if (latestRSI > 70 && previousRSI > 70) shortScore += 0.5;
+  // RSI cực trị (nới nhẹ dải để nhiều tín hiệu hơn)
+  if (latestRSI < 35 && previousRSI < 35) longScore += 0.5;
+  if (latestRSI > 65 && previousRSI > 65) shortScore += 0.5;
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
@@ -282,11 +283,33 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   return null;
 }
 
-
 // Mở vị thế
 function roundQuantityUp(quantity, stepSize) {
   // Làm tròn lên theo stepSize (ví dụ stepSize = 0.01)
   return Math.ceil(quantity / stepSize) * stepSize;
+}
+
+// NEW: hàm đóng vị thế ngay (y như Close Position)
+async function closePositionNow(symbol, side, amount) {
+  try {
+    // Hủy mọi lệnh chờ trước (nếu có)
+    await withRetry(() => exchange.cancelAllOrders(symbol));
+    logToFile(`🗑️ [${symbol}] Đã hủy toàn bộ lệnh chờ trước khi đóng.`);
+
+    const opposite = side === 'long' ? 'sell' : 'buy';
+    // LỆNH THỊ TRƯỜNG reduceOnly để đóng sạch vị thế
+    await withRetry(() =>
+      exchange.createMarketOrder(symbol, opposite, amount, undefined, { reduceOnly: true }) // CHANGED: truyền undefined cho price
+    );
+
+    logToFile(`🛑 [${symbol}] Đã đóng toàn bộ vị thế bằng MARKET ${opposite} (reduceOnly).`);
+    activePositions.delete(symbol);
+    savePositions();
+    return true;
+  } catch (e) {
+    logToFile(`❌ Lỗi closePositionNow(${symbol}): ${e.message}`);
+    return false;
+  }
 }
 
 async function openPosition(symbol, side, entryPrice, quantity, leverage) {
@@ -310,13 +333,11 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
     }
 
     const minNotional = 5;
-    // const stepSize = market.limits.amount.step || 0.0001;
     const stepSize = market?.precision?.amount
       ? Math.pow(10, -market.precision.amount)
       : 0.0001;
 
     const notional = entryPrice * quantity;
-
     let adjustedQuantity = quantity;
 
     if (notional < minNotional) {
@@ -330,17 +351,15 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
       logToFile(`⚠️ Điều chỉnh khối lượng cho ${symbol} từ ${quantity} thành ${adjustedQuantity} để đạt min notional ${minNotional}`);
     }
 
-    logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} với giá vào lệnh ${entryPrice}, khối lượng ${adjustedQuantity}, đòn bẩy ${leverage}x`);
+    logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} @ ${entryPrice}, qty ${adjustedQuantity}, leverage ${leverage}x`);
 
-    // await exchange.setLeverage(leverage, symbol);
+    // Đòn bẩy
     await exchange.fapiPrivate_post_leverage({
       symbol: symbol.replace('/', ''),
       leverage
     });
 
     const orderSide = side.toLowerCase() === 'long' ? 'buy' : 'sell';
-    logToFile(`DEBUG: orderSide=${orderSide}`);
-
     let order;
     try {
       order = await exchange.createMarketOrder(symbol, orderSide, adjustedQuantity);
@@ -352,29 +371,10 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
 
     const filledPrice = order?.average || entryPrice;
 
-    const riskAmount = 3;
-    const priceChange = riskAmount / (adjustedQuantity * leverage);
-    const tpPrice = side === 'long' ? filledPrice + priceChange : filledPrice - priceChange;
-    const slPrice = side === 'long' ? filledPrice - priceChange : filledPrice + priceChange;
+    // CHANGED: KHÔNG đặt TP/SL tự động nữa — bỏ toàn bộ createOrder TP/SL
+    // (Giữ logic đóng lệnh theo PnL trong checkPositions)
 
-    const oppositeSide = side.toLowerCase() === 'long' ? 'sell' : 'buy';
-
-    await exchange.createOrder(symbol, 'take_profit_market', oppositeSide, adjustedQuantity, null, {
-      stopPrice: tpPrice,
-      reduceOnly: true,
-      closePosition: true,
-      workingType: 'MARK_PRICE'
-    });
-
-    await exchange.createOrder(symbol, 'stop_market', oppositeSide, adjustedQuantity, null, {
-      stopPrice: slPrice,
-      reduceOnly: true,
-      closePosition: true,
-      workingType: 'MARK_PRICE'
-    });
-
-
-    logToFile(`✅ Đã mở lệnh ${side.toUpperCase()} ${symbol}. TP: ${tpPrice}, SL: ${slPrice}`);
+    logToFile(`✅ Đã mở lệnh ${side.toUpperCase()} ${symbol} @ ~${filledPrice}. (Không đặt TP/SL tự động)`);
 
     return true;
 
@@ -383,7 +383,6 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
     return false;
   }
 }
-
 
 // Kiểm tra vị thế
 async function checkPositions() {
@@ -394,7 +393,6 @@ async function checkPositions() {
     for (const pos of positions) {
       const info = pos?.info;
       const symbol = pos?.symbol;
-
       if (!info || !symbol || typeof info.positionAmt === 'undefined') continue;
 
       const positionAmt = parseFloat(info.positionAmt);
@@ -408,40 +406,19 @@ async function checkPositions() {
 
       openSymbols.add(symbol);
 
+      // cập nhật/ghi nhận vị thế
       activePositions.set(symbol, {
         side,
         entry: entryPrice,
         amount,
-        openedAt: new Date().toISOString(),
+        openedAt: activePositions.get(symbol)?.openedAt || new Date().toISOString(),
       });
 
       logToFile(`📌 Vị thế ${symbol}: ${positionAmt} hợp đồng, PnL: ${info.unRealizedProfit || 0}`);
     }
 
-    async function checkOpenOrders(symbol, positionTimestamp) {
-      try {
-        const orders = await withRetry(() => exchange.fetchOpenOrders(symbol));
-        const types = orders.map(o => o.type?.toLowerCase());
-
-        const hasTP = types.includes('take_profit_market') || types.includes('take_profit');
-        const hasSL = types.includes('stop_market') || types.includes('stop');
-
-        if (!hasTP || !hasSL) {
-          const age = Date.now() - new Date(positionTimestamp).getTime();
-          if (age < 10_000) {
-            logToFile(`⏳ TP/SL chưa kiểm tra vì lệnh ${symbol} mới mở < 10s`);
-            return true;
-          }
-          logToFile(`⚠️ Lệnh TP/SL cho ${symbol} không tồn tại sau 10s`);
-          return false;
-        }
-
-        return true;
-      } catch (e) {
-        logToFile(`❌ Lỗi kiểm tra lệnh mở cho ${symbol}: ${e.message}`);
-        return false;
-      }
-    }
+    // CHANGED: Không còn bắt buộc phải có TP/SL mở
+    // Bỏ checkOpenOrders cũ; thay bằng giám sát PnL thuần
 
     for (const [symbol, position] of activePositions.entries()) {
       if (!openSymbols.has(symbol)) {
@@ -460,47 +437,33 @@ async function checkPositions() {
       const side = position.side;
       const contractSize = market.contractSize || 1;
 
-      const hasOrders = await checkOpenOrders(symbol, position.openedAt);
-      if (!hasOrders) {
-        logToFile(`⚠️ Đóng vị thế ${symbol} vì thiếu lệnh TP/SL`);
-        const opposite = side === 'long' ? 'sell' : 'buy';
-        await withRetry(() => exchange.createMarketOrder(symbol, opposite, amount, { reduceOnly: true }));
-        activePositions.delete(symbol);
-        savePositions();
-        continue;
-      }
-
+      // Tính PnL và ROI tham khảo (phí ước lượng)
       const feeRate = 0.0004;
       const entryFee = amount * entry * contractSize * feeRate;
       const exitFee = amount * currentPrice * contractSize * feeRate;
-      const margin = (amount * entry * contractSize) / leverage;
 
       const pnl = side === 'long'
         ? (currentPrice - entry) * amount * contractSize - entryFee - exitFee
         : (entry - currentPrice) * amount * contractSize - entryFee - exitFee;
 
-      const roi = (pnl / margin) * 100;
+      const roi = (() => {
+        const margin = (amount * entry * contractSize) / leverage;
+        return margin > 0 ? (pnl / margin) * 100 : 0;
+      })();
 
       const isTakeProfit = pnl >= profitTarget;
       const isStopLoss = pnl <= -lossLimit;
 
       if (isTakeProfit || isStopLoss) {
-        const reason = isTakeProfit ? 'Take Profit (thủ công)' : 'Stop Loss (thủ công)';
-        const opposite = side === 'long' ? 'sell' : 'buy';
+        const reason = isTakeProfit ? 'Take Profit (PnL)' : 'Stop Loss (PnL)';
+        logToFile(`🧮 ${symbol} đạt ngưỡng ${reason}. PnL=${pnl.toFixed(4)}, ROI=${roi.toFixed(2)}%`);
 
-        try {
-          await withRetry(() => exchange.cancelAllOrders(symbol));
-          logToFile(`🗑️ Đã hủy lệnh TP/SL cho ${symbol}`);
-
-          await withRetry(() =>
-            exchange.createMarketOrder(symbol, opposite, amount, { reduceOnly: true })
-          );
-          logToFile(`🛑 Đã đóng ${symbol} do ${reason} tại ${currentPrice} (ROI: ${roi.toFixed(2)}%)`);
-          activePositions.delete(symbol);
-          savePositions();
+        // Đóng NGAY lập tức toàn bộ vị thế (y như Close Position)
+        const closed = await closePositionNow(symbol, side, amount);
+        if (!closed) {
+          logToFile(`❌ Đóng ${symbol} thất bại. Thử lại sau.`);
+        } else {
           await sleep(500);
-        } catch (e) {
-          logToFile(`❌ Lỗi đóng vị thế ${symbol}: ${e.message}`);
         }
       } else {
         logToFile(`📊 ${symbol} ROI: ${roi.toFixed(2)}% - Đang giữ.`);
@@ -512,18 +475,12 @@ async function checkPositions() {
   }
 }
 
-
 // Vòng lặp chính
-// Kiểm tra API key
 if (!process.env.API_KEY || !process.env.API_SECRET) {
   logToFile('❌ Thiếu API_KEY hoặc API_SECRET trong file .env');
   process.exit(1);
 }
 
-// ✅ Hàm normalizeSymbol: chuyển BTC/USDT hoặc BTC/USDT:USDT → BTCUSDT
-// function normalizeSymbol(symbol) {
-//   return symbol.split(':')[0].replace('/', '');
-// }
 function normalizeSymbol(symbol) {
   return symbol.split(':')[0]; // "BTC/USDT:USDT" -> "BTC/USDT"
 }
@@ -562,7 +519,7 @@ async function runBot() {
 
       for (const symbolRaw of symbols) {
         const symbol = normalizeSymbol(symbolRaw);
-        // const symbol = symbolRaw;
+
         if (symbolBlacklist.has(symbol)) {
           logToFile(`⚠️ Bỏ qua symbol trong danh sách đen: ${symbol}`);
           continue;
@@ -648,9 +605,7 @@ async function runBot() {
   }
 }
 
-// runBot();
-
-// Kiểm tra API key
+// Kiểm tra API key (đã ở trên), gọi bot
 if (!process.env.API_KEY || !process.env.API_SECRET) {
   logToFile('❌ Thiếu API_KEY hoặc API_SECRET trong file .env');
   process.exit(1);
