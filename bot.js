@@ -253,8 +253,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   if (latestMACDHist < 0 && previousMACDHist >= 0) shortScore += 0.5;
 
   // RSI cực trị (nới nhẹ dải để nhiều tín hiệu hơn)
-  if (latestRSI < 35 && previousRSI < 35) longScore += 0.5;
-  if (latestRSI > 65 && previousRSI > 65) shortScore += 0.5;
+  if (latestRSI < 30 && previousRSI < 30) longScore += 0.5;
+  if (latestRSI > 70 && previousRSI > 70) shortScore += 0.5;
 
   // Volume tăng mạnh
   if (currentVolume > volumeAvg * 2) {
