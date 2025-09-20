@@ -16,7 +16,7 @@ const exchange = new ccxt.binance({
 const symbolLocks = new Set();
 
 // Cấu hình bot
-const maxPositions = 7;
+const maxPositions = 4;
 const tradeAmount = 10; // Mỗi lệnh $10
 const leverage = 5; // Đòn bẩy
 const profitTarget =1; // Mục tiêu lợi nhuận $2 (PnL thực)
@@ -24,7 +24,7 @@ const lossLimit = 3; // Giới hạn lỗ $3 (PnL thực)
 const rsiPeriod = 14;
 const smaPeriod = 50;
 const emaPeriod = 20;
-const timeframe = '15m';
+const timeframe = '30m';
 const activePositions = new Map();
 const targetBalance = 1000; // Mục tiêu vốn $1000
 const symbolBlacklist = new Set(); // Danh sách đen cho symbol lỗi
