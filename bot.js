@@ -1,4 +1,4 @@
-const fs = require('fs');
+ const fs = require('fs');
 require('dotenv').config();
 const ccxt = require('ccxt');
 const { RSI, MACD, SMA, EMA } = require('technicalindicators');
@@ -17,7 +17,7 @@ const symbolLocks = new Set();
 
 // Cấu hình bot
 const maxPositions = 4;
-const tradeAmount = 10; // Mỗi lệnh $10
+const tradeAmount =20; // Mỗi lệnh $10
 const leverage = 5; // Đòn bẩy
 const profitTarget =1; // Mục tiêu lợi nhuận $2 (PnL thực)
 const lossLimit = 3; // Giới hạn lỗ $3 (PnL thực)
