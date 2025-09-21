@@ -16,9 +16,9 @@ const exchange = new ccxt.binance({
 const symbolLocks = new Set();
 
 // Cấu hình bot
-const maxPositions = 4;
+const maxPositions = 6;
 const tradeAmount =20; // Mỗi lệnh $20
-const leverage = 10; // Đòn bẩy
+const leverage = 20; // Đòn bẩy
 const profitTarget =1; // Mục tiêu lợi nhuận $2 (PnL thực)
 const lossLimit = 3; // Giới hạn lỗ $3 (PnL thực)
 const rsiPeriod = 14;
