@@ -1,4 +1,4 @@
- const fs = require('fs');
+const fs = require('fs');
 require('dotenv').config();
 const ccxt = require('ccxt');
 const { RSI, MACD, SMA, EMA } = require('technicalindicators');
@@ -17,9 +17,9 @@ const symbolLocks = new Set();
 
 // Cấu hình bot
 const maxPositions = 10;
-const tradeAmount =20; // Mỗi lệnh $20
+const tradeAmount = 10; // Mỗi lệnh $10
 const leverage = 10; // Đòn bẩy
-const profitTarget =1; // Mục tiêu lợi nhuận $2 (PnL thực)
+const profitTarget = 1; // Mục tiêu lợi nhuận $2 (PnL thực)
 const lossLimit = 3; // Giới hạn lỗ $3 (PnL thực)
 const rsiPeriod = 14;
 const smaPeriod = 50;
@@ -277,8 +277,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   const isUptrend = latestClose > latestEMA20;
   const isDowntrend = latestClose < latestEMA20;
 
-  if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
-  if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
+  if (longScore >= 2 && longScore > shortScore && isUptrend) return 'LONG';
+  if (shortScore >= 2 && shortScore > longScore && isDowntrend) return 'SHORT';
 
   return null;
 }
@@ -353,6 +353,19 @@ async function openPosition(symbol, side, entryPrice, quantity, leverage) {
 
     logToFile(`🚀 Mở vị thế ${side.toUpperCase()} cho ${symbol} @ ${entryPrice}, qty ${adjustedQuantity}, leverage ${leverage}x`);
 
+    try {
+      await exchange.fapiPrivate_post_marginType({
+        symbol: symbol.replace('/', ''),
+        marginType: 'ISOLATED'
+      });
+      logToFile(`✅ Đã đặt Isolated cho ${symbol}`);
+    } catch (err) {
+      if (err.message.includes('No need to change margin type')) {
+        logToFile(`ℹ️ ${symbol} đã ở Isolated`);
+      } else {
+        logToFile(`⚠️ Lỗi set marginType cho ${symbol}: ${err.message}`);
+      }
+    }
     // Đòn bẩy
     await exchange.fapiPrivate_post_leverage({
       symbol: symbol.replace('/', ''),
