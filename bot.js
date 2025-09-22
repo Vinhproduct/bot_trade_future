@@ -17,8 +17,8 @@ const symbolLocks = new Set();
 
 // Cấu hình bot
 const maxPositions = 10;
-const tradeAmount =10; // Mỗi lệnh $20
-const leverage = 20; // Đòn bẩy
+const tradeAmount =20; // Mỗi lệnh $20
+const leverage = 10; // Đòn bẩy
 const profitTarget =1; // Mục tiêu lợi nhuận $2 (PnL thực)
 const lossLimit = 3; // Giới hạn lỗ $3 (PnL thực)
 const rsiPeriod = 14;
@@ -277,8 +277,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   const isUptrend = latestClose > latestEMA20;
   const isDowntrend = latestClose < latestEMA20;
 
-  if (longScore >= 2 && longScore > shortScore && isUptrend) return 'LONG';
-  if (shortScore >= 2 && shortScore > longScore && isDowntrend) return 'SHORT';
+  if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
+  if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
 
   return null;
 }
