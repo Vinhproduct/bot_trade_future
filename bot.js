@@ -277,8 +277,8 @@ function analyze({ rsi, macd, volumes, volumeAvg, sma, ema, closes, ema20 }) {
   const isUptrend = latestClose > latestEMA20;
   const isDowntrend = latestClose < latestEMA20;
 
-  if (longScore >= 2 && longScore > shortScore && isUptrend) return 'LONG';
-  if (shortScore >= 2 && shortScore > longScore && isDowntrend) return 'SHORT';
+  if (longScore >= 1.5 && longScore > shortScore && isUptrend) return 'LONG';
+  if (shortScore >= 1.5 && shortScore > longScore && isDowntrend) return 'SHORT';
 
   return null;
 }
